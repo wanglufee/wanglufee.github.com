@@ -52,3 +52,60 @@ ext2-y := balloc.o dir.o file.o fsync.o ialloc.o inode.o \
 obj-$(CONfiG_EXT2_FS) += ext2/
 ```
 目录层次，当配置为 y 或者 m 时，会迭代 ext2 目录。
+
+# linux内核模块程序结构
+一般内核模块主要由以下几部分组成
+- 模块加载函数： 当使用 `insmod` 或 `modprobe` 命令加载模块时，模块加载函数被调用，完成初始化工作。
+- 模块卸载函数： 当使用 `rmmod` 命令卸载模块时，会调用模块卸载函数，完成卸载功能。
+- 模块许可声明： 声明内核模块的许可权限。(大多数情况下license为 GPL v2)
+- 模块参数(可选)： 模块加载时可传递给模块的值。
+- 模块导出符号(可选)： 内核模块导出的符号，若导出则其他模块可以使用本模块中的变量或函数。
+- 模块作者等信息声明(可选)
+## 模块加载函数
+```c
+static int _ _init initialization_function(void)
+{
+    /* 初始化代码 */
+}
+module_init(initialization_function);
+```
+模块加载函数一般以 **__init** 声明，而模块加载函数以 **module_init(函数名)** 的形式被指定，它返回整形值，模块初始化成功时返回0。失败则返回相应的错误码。
+
+还可以使用 **request_module(module_name)** 来灵活加载其他内核模块。
+## 模块卸载函数
+```c
+static void _ _exit cleanup_function(void)
+{
+      /* 释放代码 */
+}
+module_exit(cleanup_function);
+```
+内核卸载函数一般以 **__exit** 声明，模块卸载函数在模块卸载时执行，不返回任何值，必须以 **module_exit(函数名)** 的形式来指定。若模块被编译进内核，则卸载函数会被省略。
+## 模块参数
+```c
+static char *book_name = "dissecting Linux Device Driver";
+module_param(book_name, charp, S_IRUGO);
+static int book_num = 4000;
+module_param(book_num, int, S_IRUGO);
+```
+可以使用 **modele_param(参数名,参数类型,参数读/写权限)** 为模块定义一个参数。 在加载模块时可以向模块传递参数 `insmod 模块名 参数名=参数值`。如果不传递，则使用定义的缺省值。 参数的类型可以为
+**byte、short、ushort、int、uint、long、ulong、charp（字符指针）​、bool或invbool（布尔的反）**。
+
+此外模块还可以拥有参数数组，可以通过 `module_param_array(数组名,数组类型,数组长,参数读/写权限)` 来定义。
+
+模块被加载后在 /sys/module 目录下会出现以模块名命名的目录，如果包含可读写的参数时，目录下还将包含 parameters 目录，其中包含参数名的一系列文件节点。
+## 导出符号
+```c
+EXPORT_SYMBOL(符号名);
+EXPORT_SYMBOL_GPL(符号名);
+```
+模块可以使用上述两个宏导出符号，其他模块使用时只需要提前声明即可。 **EXPORT_SYMBOL_GPL**导出的符号只适用于包含GPL许可权的模块。
+## 模块声明与描述
+```c
+MODULE_AUTHOR(author);
+MODULE_DESCRIPTION(description);
+MODULE_VERSION(version_string);
+MODULE_DEVICE_TABLE(table_info);
+MODULE_ALIAS(alternate_name);
+```
+上述宏分别用于声明模块的作者、描述、版本、设备表和别名。
