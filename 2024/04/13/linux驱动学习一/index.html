@@ -504,11 +504,11 @@
       
         <div class="post-detail-header_wordcount">
           <span class="totalcount">
-            <i class="fas fa-file-text-o"></i> Words: 603 |
+            <i class="fas fa-file-text-o"></i> Words: 1.3k |
           </span>
   
           <span class="min2read">
-            <i class="fas fa-clock"></i> Reading time: 2min |
+            <i class="fas fa-clock"></i> Reading time: 5min |
           </span>
   
           
@@ -555,6 +555,28 @@
 <p>若一个模块由多个文件构成，则会去找对应的 .o 文件，最终链接生成最终的 .o 文件。此处若配置了 ext2.o ，则会去找 balloc.o  dir.o 等文件，最终生成 ext2.o 。</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">obj-$(CONfiG_EXT2_FS) += ext2/</span><br></pre></td></tr></table></figure>
 <p>目录层次，当配置为 y 或者 m 时，会迭代 ext2 目录。</p>
+<h1 id="linux内核模块程序结构"><a href="#linux内核模块程序结构" class="headerlink" title="linux内核模块程序结构"></a>linux内核模块程序结构</h1><p>一般内核模块主要由以下几部分组成</p>
+<ul>
+<li>模块加载函数： 当使用 <code>insmod</code> 或 <code>modprobe</code> 命令加载模块时，模块加载函数被调用，完成初始化工作。</li>
+<li>模块卸载函数： 当使用 <code>rmmod</code> 命令卸载模块时，会调用模块卸载函数，完成卸载功能。</li>
+<li>模块许可声明： 声明内核模块的许可权限。(大多数情况下license为 GPL v2)</li>
+<li>模块参数(可选)： 模块加载时可传递给模块的值。</li>
+<li>模块导出符号(可选)： 内核模块导出的符号，若导出则其他模块可以使用本模块中的变量或函数。</li>
+<li>模块作者等信息声明(可选)</li>
+</ul>
+<h2 id="模块加载函数"><a href="#模块加载函数" class="headerlink" title="模块加载函数"></a>模块加载函数</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> _ _init <span class="title function_">initialization_function</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">/* 初始化代码 */</span></span><br><span class="line">&#125;</span><br><span class="line">module_init(initialization_function);</span><br></pre></td></tr></table></figure>
+<p>模块加载函数一般以 <strong>__init</strong> 声明，而模块加载函数以 <strong>module_init(函数名)</strong> 的形式被指定，它返回整形值，模块初始化成功时返回0。失败则返回相应的错误码。</p>
+<p>还可以使用 <strong>request_module(module_name)</strong> 来灵活加载其他内核模块。</p>
+<h2 id="模块卸载函数"><a href="#模块卸载函数" class="headerlink" title="模块卸载函数"></a>模块卸载函数</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> _ _exit <span class="title function_">cleanup_function</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">      <span class="comment">/* 释放代码 */</span></span><br><span class="line">&#125;</span><br><span class="line">module_exit(cleanup_function);</span><br></pre></td></tr></table></figure>
+<p>内核卸载函数一般以 <strong>__exit</strong> 声明，模块卸载函数在模块卸载时执行，不返回任何值，必须以 <strong>module_exit(函数名)</strong> 的形式来指定。若模块被编译进内核，则卸载函数会被省略。</p>
+<h2 id="模块参数"><a href="#模块参数" class="headerlink" title="模块参数"></a>模块参数</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">char</span> *book_name = <span class="string">&quot;dissecting Linux Device Driver&quot;</span>;</span><br><span class="line">module_param(book_name, charp, S_IRUGO);</span><br><span class="line"><span class="type">static</span> <span class="type">int</span> book_num = <span class="number">4000</span>;</span><br><span class="line">module_param(book_num, <span class="type">int</span>, S_IRUGO);</span><br></pre></td></tr></table></figure>
+<p>可以使用 <strong>modele_param(参数名,参数类型,参数读&#x2F;写权限)</strong> 为模块定义一个参数。 在加载模块时可以向模块传递参数 <code>insmod 模块名 参数名=参数值</code>。如果不传递，则使用定义的缺省值。 参数的类型可以为<br><strong>byte、short、ushort、int、uint、long、ulong、charp（字符指针）​、bool或invbool（布尔的反）</strong>。</p>
+<p>此外模块还可以拥有参数数组，可以通过 <code>module_param_array(数组名,数组类型,数组长,参数读/写权限)</code> 来定义。</p>
+<p>模块被加载后在 &#x2F;sys&#x2F;module 目录下会出现以模块名命名的目录，如果包含可读写的参数时，目录下还将包含 parameters 目录，其中包含参数名的一系列文件节点。</p>
+<h2 id="导出符号"><a href="#导出符号" class="headerlink" title="导出符号"></a>导出符号</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EXPORT_SYMBOL(符号名);</span><br><span class="line">EXPORT_SYMBOL_GPL(符号名);</span><br></pre></td></tr></table></figure>
+<p>模块可以使用上述两个宏导出符号，其他模块使用时只需要提前声明即可。 <strong>EXPORT_SYMBOL_GPL</strong>导出的符号只适用于包含GPL许可权的模块。</p>
+<h2 id="模块声明与描述"><a href="#模块声明与描述" class="headerlink" title="模块声明与描述"></a>模块声明与描述</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">MODULE_AUTHOR(author);</span><br><span class="line">MODULE_DESCRIPTION(description);</span><br><span class="line">MODULE_VERSION(version_string);</span><br><span class="line">MODULE_DEVICE_TABLE(table_info);</span><br><span class="line">MODULE_ALIAS(alternate_name);</span><br></pre></td></tr></table></figure>
+<p>上述宏分别用于声明模块的作者、描述、版本、设备表和别名。</p>
 
       </div>
       <div class="post-tags-categories">
@@ -802,7 +824,7 @@
   <div class='content'>
     <div class="toc-main">
       <div class="toc-content">
-        <!-- <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#linux%E5%86%85%E6%A0%B8%E7%BC%96%E8%AF%91"><span class="toc-text">linux内核编译</span></a></li></ol> -->
+        <!-- <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#linux%E5%86%85%E6%A0%B8%E7%BC%96%E8%AF%91"><span class="toc-text">linux内核编译</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#linux%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97%E7%A8%8B%E5%BA%8F%E7%BB%93%E6%9E%84"><span class="toc-text">linux内核模块程序结构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E5%8A%A0%E8%BD%BD%E5%87%BD%E6%95%B0"><span class="toc-text">模块加载函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E5%8D%B8%E8%BD%BD%E5%87%BD%E6%95%B0"><span class="toc-text">模块卸载函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E5%8F%82%E6%95%B0"><span class="toc-text">模块参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AF%BC%E5%87%BA%E7%AC%A6%E5%8F%B7"><span class="toc-text">导出符号</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E5%A3%B0%E6%98%8E%E4%B8%8E%E6%8F%8F%E8%BF%B0"><span class="toc-text">模块声明与描述</span></a></li></ol></li></ol> -->
         <div class="toc"></div>
       </div>
     </div>
