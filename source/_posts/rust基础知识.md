@@ -151,3 +151,246 @@ rust所有权有三个规则：
 ```
 在函数参数以及返回值中也同样要遵循所有权规则，按照参数的类型，以及存放的位置，会发生对应的 copy 或者 move 行为。
 ## 引用和借用
+引用，顾名思义，需要引用其他的值，同时不会拿走值的所有权。
+
+rust 程序语言设计中的例子：
+```rust
+fn main() {
+    let s1 = String::from("hello");    // 此处创建了一个字符串变量
+
+    let len = calculate_length(&s1);   // 此处对变量进行了引用，使用 & 符号，没有拿走值的所有权
+
+    println!("The length of '{}' is {}.", s1, len);  // 因此在函数调用完成后，s1 变量的值依然存在未被丢弃
+}
+
+fn calculate_length(s: &String) -> usize {  // 此处参数声明的 & 符号即是引用符号
+    s.len()
+}
+
+```
+
+可以看出通过 & 符号与一个值可以创建一个值所对应的引用，可以使用值的同时不转移所有权，引用使用后被丢弃，但是原本的值不收影响。这种引用的行为被称为借用。
+
+这里只通过 & 符号创建的引用是不可变引用，即不可以修改。
+```rust
+fn main() {
+    let s = String::from("hello");
+
+    change(&s);
+}
+
+fn change(some_string: &String) {
+    some_string.push_str(", world");  // 尝试修改不可变引用会发生错误
+}
+
+```
+与之相对应的则是可变引用，通过 &mut 来进行创建。
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    change(&mut s);  // 这里创建了一个 s 的可变引用。注意，此处需要 s 本身也是可变的才可以。
+}
+
+fn change(some_string: &mut String) { // 此处函数参数在进行声明时使用了可变引用
+    some_string.push_str(", world");  // 此处可以通过这个可变引用来修改原本的值。
+}
+
+```
+可变引用在同一时间只能存在一个，不可变引用可以同时存在多个，这主要是为了避免数据竞争。同时在不可变引用存在期间，不可以有可变引用。
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &mut s;
+    let r2 = &mut s;   // 此处同时创建了两个可变引用，并且两个可变引用生命周期出现了重叠，这是不允许的
+
+    println!("{}, {}", r1, r2); // 两个引用在此同时使用
+}
+
+```
+下面这种情况下，两个可变引用生命周期未发生重叠，属于合法的。
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    {
+        let r1 = &mut s;
+    } // r1 在这里离开了作用域，所以我们完全可以创建一个新的引用
+
+    let r2 = &mut s;
+}
+
+```
+在不可变引用存在期间，不允许创建可变引用。
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s; // 没问题
+    let r2 = &s; // 没问题
+    let r3 = &mut s; // 大问题
+
+    println!("{}, {}, and {}", r1, r2, r3);
+}
+
+```
+这里引用的生命周期结束，即指引用最后一次使用的地方，在此之后，这个引用被视为生命周期结束。
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s; // 没问题
+    let r2 = &s; // 没问题
+    println!("{} and {}", r1, r2);
+    // 此位置之后 r1 和 r2 不再使用
+
+    let r3 = &mut s; // 没问题
+    println!("{}", r3);
+}
+
+```
+同时引用也有着限制，引用的生命周期不能比原本值的生命周期更长，这会出现悬垂引用的问题，出现这种情况是编译器一般会报错。
+## 切片
+切片允许你引用集合中的一段连续的元素，而切片同样也不会拿走所有权。
+```rust
+    let s = String::from("hello world");
+    let s1 = &s[0..5];
+    let s2 = &s[6..11];
+```
+可以看到切片的用法 `[start..end]` 通过指定起始坐标以及结束坐标来获取指定的切片，这里会包含 start 而不包含 end。
+
+如果切片的起始位置是0，则0可以省略。
+```rust
+    let s = String::from("hello world");
+    let s1 = &s[0..5];
+    let s2 = &s[..5];  // 这两种写法获取的切片是相同的。
+```
+同样，如果切片的结尾包含了集合的最后元素，那么 end 也是可以省略的。
+```rust
+    let s = String::from("hello world");
+    let len = s.len();
+    let s1 = &s[3..len];
+    let s2 = &s[3..];  // 这两种写法获取的切片是相同的。
+```
+同样通过切片的方式创建的值是不可变的。
+## 结构体
+结构体允许你将不同类型的元素组合在一起，并给每个元素赋予一个名字，以此来组成一个特殊的具有意义的值。而结构体在进行访问时可以直接通过元素名字来访问。
+
+定义结构体需要使用 `struct` 关键字 + 结构体名字来定义，后面使用大括号将结构体元素包含。
+```rust
+struct User {      // 定义了结构体类型名字 User 
+    active: bool,    //  结构体中的各个元素，以及元素对应的类型
+    username: String,
+    email: String,
+    sign_in_count: u64,
+}
+
+fn main() {}
+
+```
+结构体在进行使用时，需要实例化一个结构体，在实例化过程中需要为每个元素赋予对应类型的值，赋值可以使用 `元素名: 值` 的方式。
+```rust
+struct User {
+    active: bool,
+    username: String,
+    email: String,
+    sign_in_count: u64,
+}
+
+fn main() {
+    let user1 = User {     //  通过结构体类型名来创建一个结构体
+        email: String::from("someone@example.com"),   //  为结构体的每个元素赋值，顺序可以与定义顺序不同
+        username: String::from("someusername123"),
+        active: true,
+        sign_in_count: 1,
+    };
+
+    let email = user1.email   // 使用结构体中的值可以使用 . 符号
+}
+
+```
+如果结构体是可变的，那么可以通过 `结构体变量名.元素名 = ` 的方式改变结构体元素值。**注意必须整个实例是可变的，rust 不支持只将某个元素标记为可变**
+```rust
+struct User {
+    active: bool,
+    username: String,
+    email: String,
+    sign_in_count: u64,
+}
+
+fn main() {
+    let mut user1 = User {   //  实例可变
+        email: String::from("someone@example.com"),
+        username: String::from("someusername123"),
+        active: true,
+        sign_in_count: 1,
+    };
+
+    user1.email = String::from("anotheremail@example.com");  // 给实例的元素修改值
+}
+
+```
+在通过变量为结构体元素赋值时，如果变量名和结构体元素名相同，则可以简写为结构体元素名即可。`元素名: 变量名` -> `元素名`
+```rust
+struct User {
+    active: bool,
+    username: String,
+    email: String,
+    sign_in_count: u64,
+}
+
+fn build_user(email: String, username: String) -> User {
+    User {
+        email,     // 变量名与元素名相同，简写即可
+        username,
+        active: true,
+        sign_in_count: 1,
+    }
+}
+
+fn main() {
+    let user1 = build_user(
+        String::from("someone@example.com"),
+        String::from("someusername123"),
+    );
+}
+
+```
+通过结构体实例来创建新结构体时，可以使用结构体更新语法来创建结构体，只需更新不同的元素的值即可，相同的元素值可以使用 `..实例名` 来省略。
+```rust
+struct User {
+    active: bool,
+    username: String,
+    email: String,
+    sign_in_count: u64,
+}
+
+fn main() {
+    // --snip--
+
+    let user1 = User {
+        email: String::from("someone@example.com"),
+        username: String::from("someusername123"),
+        active: true,
+        sign_in_count: 1,
+    };
+
+    let user2 = User {
+        email: String::from("another@example.com"),  // 更新与 user1 不同的元素
+        ..user1  // 相同元素可以省略
+    };
+}
+
+```
+结构体同样也会涉及到所有权问题，包括结构体中的元素，如果通过结构体 user1 来创建了 user2 ，那么 user1 将不能再使用，如果将结构体中的元素值赋予了其他变量，那么元素的所有权也将转移。
+
+比较特殊的还有单元结构体，其中没有包含任何元素，如果仅仅想在结构体上实现某些 trait 而不需要携带数据时，可以使用单元结构体
+```rust
+struct AlwaysEqual;
+
+fn main() {
+    let subject = AlwaysEqual;
+}
+
+```
