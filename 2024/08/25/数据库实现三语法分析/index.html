@@ -11,7 +11,7 @@
   <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-  <title>archives: 2024 | wanglufee</title>
+  <title>数据库实现三语法分析 | wanglufee</title>
 
   <link rel="icon" type="image/jpeg" href="/OIP-C.jpg">
   <link rel="stylesheet" href="https://at.alicdn.com/t/font_1911880_c1nvbyezg17.css">
@@ -458,225 +458,653 @@
     
 </header>
         <!-- 内容区域 -->
-        <div class="bg-dark-floor" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -2;"></div>
-<div class="bg-light-floor-archive" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -3;"></div>
-<div class="archive-header" style="background-image:url('https://pic1.zhimg.com/80/v2-1414b3a4b205e19060db18a20d08723a_1440w.jpg?source=1940ef5c')">
-  <div class="archive-header-title">
-    archive
-  </div>
-  <div class="archive-header-desc">
-  
-  <span class="title" id="archive-header-desc"></span>
-  <script>
-  function typedFn() {
-    const el = '#archive-header-desc';
-    const type = 'archive';
-    let desc = '愿你如风，被人温柔以待'
-    var typed = new Typed(el, {
-      strings: [desc],
-      startDelay: 100,
-      typeSpeed: 100,
-      loop: true,
-      backSpeed: 50,
-      showCursor: true
-    });
-  }
-  typedFn();
-</script>
-  
-  </div>
-  <div class="mask-box"></div>
-</div>
+        
+ <!-- prismjs 代码高亮 -->
+ 
 
-<div class="archive-video">
-  <video class="full-video" autoplay loop muted>
-      <source style="width: 100%;height: 100vh;" src="/">
-  </video>
-  <div class="video-header-title">
-    archive
-  </div>
-  <div class="video-header-desc">
+
+<div class="bg-dark-floor" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -1;"></div>
+
+
+  <!-- 文章详情页顶部图片和标题 -->
+
+
+
+
+<div class="post-detail-header" id="thumbnail_canvas" style="background-repeat: no-repeat; background-size: cover; 
+  background-position: center center;position: relative;background-image:url('https://pic4.zhimg.com/80/v2-e434e3a2888fb4efb1844845b8791d1f_1440w.webp')">
+  <div class="post-detail-header-mask"></div>
+  <canvas id="header_canvas"style="position:absolute;bottom:0;pointer-events:none;"></canvas>
   
-      <span class="title" id="archive-video-header-desc"></span>
-      <script>
-  function typedFn() {
-    const el = '#archive-video-header-desc';
-    const type = 'archive';
-    let desc = '愿你如风，被人温柔以待'
-    var typed = new Typed(el, {
-      strings: [desc],
-      startDelay: 100,
-      typeSpeed: 100,
-      loop: true,
-      backSpeed: 50,
-      showCursor: true
-    });
-  }
-  typedFn();
-</script>
+  <div class="post-detail-header_info-box">
+    <div class="title-box">
+      <span class="title">
+        数据库实现三语法分析
+      </span>
+    </div>
+    
+    
       
+        <span class="post-detail-header_date">
+          <i class="fas fa-calendar"></i> Published in：2024-08-25 |
+        </span>
+      
+
+      
+        <span class="post-detail-header_categories">
+          <i class="iconfont iconbookmark1"></i> category：
+          
+            <a href="/categories/rust%EF%BC%8C%E6%95%B0%E6%8D%AE%E5%BA%93/" class="post-detail-header_category">
+              rust，数据库
+            </a>
+          
+        </span>
+      
+
+      
+        <div class="post-detail-header_wordcount">
+          <span class="totalcount">
+            <i class="fas fa-file-text-o"></i> Words: 1.5k |
+          </span>
+  
+          <span class="min2read">
+            <i class="fas fa-clock"></i> Reading time: 6min |
+          </span>
+  
+          
+            <span class="reading">
+              <i class="fas fa-eye"></i> reading：<span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+        </div>
+      
+    
   </div>
-  <div class="mask-box"></div>
+  
+  
+    <script src="/js/bubble/bubble.js"></script>
+  
 </div>
 
-<!-- hash算法 -->
 
 
-<div class="archive-main">
-  <section class="archive">
-    <div class="archive-content">
-      <ul class="post-archive">
+
+
+<div class="post-detail-content post-row" 
+  style="padding-top: 0px;">
+  <div class="main-content">
+    <article class="post post-detail">
+      <div class="post-content">
+        <h2 id="语法分析"><a href="#语法分析" class="headerlink" title="语法分析"></a>语法分析</h2><p>在此之前我们已经实现了词法分析，将每个词都转换为了对应的 TOKEN ，现在我们的工作就需要将这些 TOKEN 通过语法分析来连接成语句，并输出相应的语法树。</p>
+<h2 id="定义抽象语法树"><a href="#定义抽象语法树" class="headerlink" title="定义抽象语法树"></a>定义抽象语法树</h2><p>这里我们以 CreateTable 为例，使用枚举来定义出抽象语法树。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// CREATE TABLE table_name (</span></span><br><span class="line"><span class="comment">//     [ column_name data_type [ column_constraint [...] ] ]</span></span><br><span class="line"><span class="comment">//     [, ... ]</span></span><br><span class="line"><span class="comment">//    );</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">enum</span> <span class="title class_">Statement</span>&#123;</span><br><span class="line">    CreateTable &#123;</span><br><span class="line">        name: <span class="type">String</span>,</span><br><span class="line">        columns: <span class="type">Vec</span>&lt;Column&gt;,</span><br><span class="line">    &#125;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中在创建表的过程中，我们需要拿到的数据有表名，以及列的信息。</p>
+<p>列同样也需要存储一些信息，比如列名，列是否可以为空，列的类型，是否有默认值等。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Column</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> name: <span class="type">String</span>,</span><br><span class="line">    <span class="keyword">pub</span> datatype: DataType,</span><br><span class="line">    <span class="keyword">pub</span> nullable: <span class="type">Option</span>&lt;<span class="type">bool</span>&gt;,</span><br><span class="line">    <span class="keyword">pub</span> default: <span class="type">Option</span>&lt;Expression&gt;,</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在创建表的过程中，可能指定默认值，而有些默认值会指定为表达式的形式，我们需要对表达式进行处理，这里我们只简单的实现一些常量的表达式处理。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">enum</span> <span class="title class_">Expression</span> &#123;</span><br><span class="line">    <span class="title function_ invoke__">Consts</span>(Consts),</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">enum</span> <span class="title class_">Consts</span> &#123;</span><br><span class="line">    Null,</span><br><span class="line">    <span class="title function_ invoke__">Boolean</span>(<span class="type">bool</span>),</span><br><span class="line">    <span class="title function_ invoke__">Integer</span>(<span class="type">i64</span>),</span><br><span class="line">    <span class="title function_ invoke__">Float</span>(<span class="type">f64</span>),</span><br><span class="line">    <span class="title function_ invoke__">String</span>(<span class="type">String</span>),</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="词法解析过程"><a href="#词法解析过程" class="headerlink" title="词法解析过程"></a>词法解析过程</h2><p>语法树相关的东西已经定义好了，接下来该进行语法分析，来输出一个抽象语法树了。</p>
+<p>首先我们需要一个语法解析器，这个解析器要能拿到词法分析的结果，并去迭代每一个 TOKEN 。这里我们使用一个词法解析器来构造一个语法解析器。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Parser</span>&lt;<span class="symbol">&#x27;a</span>&gt; &#123;</span><br><span class="line">    lexer: Peekable&lt;Lexer&lt;<span class="symbol">&#x27;a</span>&gt;&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里我们就拿到了一个词法解析器的迭代器。之前我们在实现词法解析器的迭代器时，内部的工作就是调用词法解析，并返回一个 TOKEN ，这里我们只需要对词法解析器迭代，即可获取 TOKEN 。</p>
+<p>解析时我们需要根据我们的语法规则来进行，首先我们希望每个语句能够以分号来结束，并且我们当前只解析单一的语句，那么分号之后不希望再有其他字符。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">parse</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;Statement&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="variable">stmt</span> = <span class="keyword">self</span>.<span class="title function_ invoke__">parse_statement</span>()?;</span><br><span class="line">    <span class="comment">// 希望以分号结尾</span></span><br><span class="line">    <span class="keyword">self</span>.<span class="title function_ invoke__">next_expect</span>(Token::Semicolon)?;</span><br><span class="line">    <span class="comment">// 分号之后不再有内容</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Some</span>(token) = <span class="keyword">self</span>.<span class="title function_ invoke__">peek</span>()? &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="title function_ invoke__">Err</span>(Error::<span class="title function_ invoke__">Parse</span>(<span class="built_in">format!</span>(<span class="string">&quot;[Parser] Unexpected token &#123;&#125;&quot;</span>, token)));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="title function_ invoke__">Ok</span>(stmt)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>其中 parse_statement() 方法是解析的开始，并返回一个抽象语法树，解析完成后检查是否以分号结尾。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">parse_statement</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;Statement&gt; &#123;</span><br><span class="line">    <span class="comment">// 查看第一个字符</span></span><br><span class="line">    <span class="keyword">match</span> <span class="keyword">self</span>.<span class="title function_ invoke__">peek</span>()? &#123;</span><br><span class="line">        <span class="title function_ invoke__">Some</span>(Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Create)) =&gt; <span class="keyword">self</span>.<span class="title function_ invoke__">parse_ddl</span>(),</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>解析开始时我们首先查看语句第一个 TOKEN ，以确定这条语句的类型，这里我们只有 Create 语句，当匹配到第一个 TOKEN 之后，则进行相应语句的解析工作。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">parse_ddl</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;Statement&gt; &#123;</span><br><span class="line">    <span class="keyword">match</span> <span class="keyword">self</span>.<span class="title function_ invoke__">next</span>()? &#123;</span><br><span class="line">        <span class="comment">// 期望是 Create 关键字</span></span><br><span class="line">        Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Create) =&gt; <span class="keyword">match</span> <span class="keyword">self</span>.<span class="title function_ invoke__">next</span>()? &#123;</span><br><span class="line">            <span class="comment">// Create 关键字之后应该是 Table 关键字</span></span><br><span class="line">            Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Table) =&gt; <span class="keyword">self</span>.<span class="title function_ invoke__">parse_ddl_create_table</span>(),</span><br><span class="line">            token =&gt; <span class="title function_ invoke__">Err</span>(Error::<span class="title function_ invoke__">Parse</span>(<span class="built_in">format!</span>(<span class="string">&quot;[Parser] Unexpected token &#123;&#125;&quot;</span>, token))),</span><br><span class="line">        &#125;,</span><br><span class="line">        token =&gt; <span class="title function_ invoke__">Err</span>(Error::<span class="title function_ invoke__">Parse</span>(<span class="built_in">format!</span>(<span class="string">&quot;[Parser] Unexpected token &#123;&#125;&quot;</span>, token))),</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>根据我们定义的 Create 语句，在 Create 关键字后应该是 Table，同样的方式进行匹配，成功之后进行相应的处理，否则报错，语法错误。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">parse_ddl_create_table</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;Statement&gt; &#123;</span><br><span class="line">    <span class="comment">// 期望是表名</span></span><br><span class="line">    <span class="keyword">let</span> <span class="variable">table_name</span> = <span class="keyword">self</span>.<span class="title function_ invoke__">next_ident</span>()?;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 表名之后是左括号</span></span><br><span class="line">    <span class="keyword">self</span>.<span class="title function_ invoke__">next_expect</span>(Token::OpenParen)?;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 解析列</span></span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">columns</span> = <span class="type">Vec</span>::<span class="title function_ invoke__">new</span>();</span><br><span class="line">    <span class="keyword">loop</span>&#123;</span><br><span class="line">        columns.<span class="title function_ invoke__">push</span>(<span class="keyword">self</span>.<span class="title function_ invoke__">parse_ddl_column</span>()?);</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">self</span>.<span class="title function_ invoke__">next_if_token</span>(Token::Comma).<span class="title function_ invoke__">is_none</span>() &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 右括号</span></span><br><span class="line">    <span class="keyword">self</span>.<span class="title function_ invoke__">next_expect</span>(Token::CloseParen)?;</span><br><span class="line">    <span class="title function_ invoke__">Ok</span>(Statement::CreateTable &#123; </span><br><span class="line">        name: table_name, </span><br><span class="line">        columns: columns </span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>前面的语法符合，那么我们接下来拿到的就应该是表名，列信息，列信息我们在括号内进行，因此需要匹配两个括号，中间通过循环来解析列。我们定义的每一列信息中间以逗号分隔，当我们解析了一个列信息时，查看下一个字符是否为逗号，如果是，那么还有下一个列，否则列解析完成，跳出循环。最后使用拿到的表名和列信息来构造我们的抽象语法树。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">parse_ddl_column</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;Column&gt; &#123;</span><br><span class="line">    <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">column</span> = Column&#123;</span><br><span class="line">        name: <span class="keyword">self</span>.<span class="title function_ invoke__">next_ident</span>()?,</span><br><span class="line">        datatype: <span class="keyword">match</span> <span class="keyword">self</span>.<span class="title function_ invoke__">next</span>()? &#123;</span><br><span class="line">            Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Bool) | Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Boolean) =&gt; DataType::Boolean,</span><br><span class="line">            Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Int) | Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Integer) =&gt; DataType::Integer,</span><br><span class="line">            Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Float) | Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Double) =&gt; DataType::Float,</span><br><span class="line">            Token::<span class="title function_ invoke__">Keyword</span>(Keyword::<span class="type">String</span>) | Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Text) | Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Varchar) =&gt; DataType::<span class="type">String</span>,</span><br><span class="line">            token =&gt; <span class="keyword">return</span> <span class="title function_ invoke__">Err</span>(Error::<span class="title function_ invoke__">Parse</span>(<span class="built_in">format!</span>(<span class="string">&quot;[Parser] Unexpected token &#123;&#125;&quot;</span>, token))),</span><br><span class="line">        &#125;,</span><br><span class="line">        nullable: <span class="literal">None</span>,</span><br><span class="line">        default: <span class="literal">None</span>,</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="comment">// 判断下一个是否是关键字</span></span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">let</span> <span class="variable">Some</span>(Token::<span class="title function_ invoke__">Keyword</span>(keyword)) = <span class="keyword">self</span>.<span class="title function_ invoke__">next_if_keyword</span>() &#123;</span><br><span class="line">        <span class="keyword">match</span> keyword &#123;</span><br><span class="line">            Keyword::Null =&gt; column.nullable = <span class="title function_ invoke__">Some</span>(<span class="literal">true</span>),</span><br><span class="line">            Keyword::Not =&gt; &#123;</span><br><span class="line">                <span class="keyword">self</span>.<span class="title function_ invoke__">next_expect</span>(Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Null))?;</span><br><span class="line">                column.nullable = <span class="title function_ invoke__">Some</span>(<span class="literal">false</span>)</span><br><span class="line">            &#125;</span><br><span class="line">            Keyword::<span class="built_in">Default</span> =&gt; column.default = <span class="title function_ invoke__">Some</span>(<span class="keyword">self</span>.<span class="title function_ invoke__">parse_expression</span>()?),</span><br><span class="line">            k =&gt; <span class="keyword">return</span> <span class="title function_ invoke__">Err</span>(Error::<span class="title function_ invoke__">Parse</span>(<span class="built_in">format!</span>(<span class="string">&quot;[Parser] Unexpected keyword &#123;&#125;&quot;</span>, k))),</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="title function_ invoke__">Ok</span>(column)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>列的解析，我们首先拿到的是列名，列名之后跟着类型，这两个是固定的，之后则可能出现多种情况，指定了是否非空，是否指定了默认值等，因此需要我们进行匹配，分别作出判断，如果出现了其他的关键字，那么我们需要进行报错，语法错误。最后将列信息返回。</p>
+<p>最后则是对默认值的解析工作了</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">fn</span> <span class="title function_">parse_expression</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;Expression&gt; &#123;</span><br><span class="line">    <span class="title function_ invoke__">Ok</span>(<span class="keyword">match</span> <span class="keyword">self</span>.<span class="title function_ invoke__">next</span>()? &#123;</span><br><span class="line">        Token::<span class="title function_ invoke__">Number</span>(n) =&gt; &#123;</span><br><span class="line">            <span class="keyword">if</span> n.<span class="title function_ invoke__">chars</span>().<span class="title function_ invoke__">all</span>(|c| c.<span class="title function_ invoke__">is_ascii_digit</span>()) &#123;</span><br><span class="line">                ast::Consts::<span class="title function_ invoke__">Integer</span>(n.<span class="title function_ invoke__">parse</span>()?).<span class="title function_ invoke__">into</span>()</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                ast::Consts::<span class="title function_ invoke__">Float</span>(n.<span class="title function_ invoke__">parse</span>()?).<span class="title function_ invoke__">into</span>()</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        Token::<span class="title function_ invoke__">String</span>(s) =&gt; ast::Consts::<span class="title function_ invoke__">String</span>(s).<span class="title function_ invoke__">into</span>(),</span><br><span class="line">        Token::<span class="title function_ invoke__">Keyword</span>(Keyword::True) =&gt; ast::Consts::<span class="title function_ invoke__">Boolean</span>(<span class="literal">true</span>).<span class="title function_ invoke__">into</span>(),</span><br><span class="line">        Token::<span class="title function_ invoke__">Keyword</span>(Keyword::False) =&gt; ast::Consts::<span class="title function_ invoke__">Boolean</span>(<span class="literal">false</span>).<span class="title function_ invoke__">into</span>(),</span><br><span class="line">        Token::<span class="title function_ invoke__">Keyword</span>(Keyword::Null) =&gt; ast::Consts::Null.<span class="title function_ invoke__">into</span>(),</span><br><span class="line">        t =&gt; &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="title function_ invoke__">Err</span>(Error::<span class="title function_ invoke__">Parse</span>(<span class="built_in">format!</span>(</span><br><span class="line">                <span class="string">&quot;[Parser] Unexpected expression token &#123;&#125;&quot;</span>,</span><br><span class="line">                t</span><br><span class="line">            )))</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因为我们的表达是只支持了几种常量类型，因此直接使用对应的模式匹配即可。</p>
+<p>至此我们完成了 Create 语句的解析工作，并生成了抽象语法树。</p>
+
+      </div>
+      <div class="post-tags-categories">
+        
+        <div class="tags">
+          
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="">
+              数据库
+            </a>
+          
+        </div>
+        
+      </div>
+      
+        <div class="copyright">
+  <ul class="post-copyright">
+    <li class="post-copyright-author">
+    <strong>author:  </strong>wanglufee</a>
+    </li>
+    <li class="post-copyright-link">
+    <strong>link:  </strong>
+    <a href="/2024/08/25/数据库实现三语法分析/" target="_blank" title="数据库实现三语法分析">http://wanglufee.github.io/2024/08/25/数据库实现三语法分析/</a>
+    </li>
+    <li class="post-copyright-license">
+      <strong>Copyright notice:   </strong>
+      All articles on this website, unless otherwise stated, adopt <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">CC BY-NC-ND 4.0</a>
+      reprint policy. If reproduced, please indicate source!
+    </li>
+  </ul>
+<div>
+      
+    </article>
+    <!-- 上一篇文章和下一篇文章 -->
+    
+      <!-- 文章详情页的上一页和下一页 -->
+<div class="post-nav">
+
+
+
+
+
+  
+  <div class="post-nav-next post-nav-item">
+    <div class="post-nav-img" style="background-size: cover; 
+      background-position: center center;">
+      <img class="lazyload lazyload placeholder" src="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" class="lazyload placeholder" data-srcset="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" src="" alt="">
+    </div>
+    <a href="/2024/08/17/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%BA%8C%E8%AF%8D%E6%B3%95%E5%88%86%E6%9E%90/" class="post-nav-link">
+      <div class="title">
+        Next: <i class="fas fa-angle-right"></i>
+        <div class="title-text">数据库实现二词法分析</div>
+      </div>
+      <!-- <div class="content">
+        介绍词法分析需要将用户传入的文本命令解析成对应的 TOKEN，因此需要识别每次词并实现其对应的 TOKEN。
+例如：
+用
+      </div> -->
+    </a>
+  </div>
+
+</div>
+
+    
+    
+
+    <!-- 打赏 -->
+    
+      <div id="appDonate" class="post-donate">
+  <div id="donate_board" class="donate_bar center" ref="donate">
+    <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏" @click="showDialogDrawer()"></a>
+  </div>
+  <transition name="fade">
+    <div 
+      class="donate-box-mask"
+      v-cloak 
+      v-show="visible"
+      @click="cancelDialogDrawer()"
+    >
+    </div>
+  </transition>
+  <transition name="bounce">
+    <div class="donate-box" v-cloak v-show="visible">
+      <div class="donate-box_close">
+        <i class="fas fa-times" aria-hidden="true" @click="cancelDialogDrawer" pointer></i>
+      </div>
+      <div class="donate-box_title">
+        <h4>
+          你的赏识是我前进的动力
+        </h4>
+      </div>
+      <div class="donate-box_tab">
+        <div class="Alipay" pointer :class="{'active': tabActive === 'Alipay'}" @click="changeTabActive('Alipay')">
+          支付宝
+        </div>
+        <div class="WeChatpay" pointer :class="{'active': tabActive === 'WeChatpay'}" @click="changeTabActive('WeChatpay')">
+          微信
+        </div>
+      </div>
+      <div class="donate-box_img">
+        <div class="AlipayImg" v-show="tabActive === 'Alipay'">
+          <img src="/" class="lazyload placeholder" data-srcset="/" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="支付宝打赏" />
+        </div> 
+        <div class="WeChatpayImg" v-show="tabActive === 'WeChatpay'">
+          <img src="/" class="lazyload placeholder" data-srcset="/" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="微信打赏" />
+        </div>
+      </div>
+    </div>
+  </transition>
+</div>
+
+<script>
+  var body = document.body || document.documentElement || window;
+  var vm = new Vue({
+    el: '#appDonate',
+    data: {
+      visible: false,
+      tabActive: 'Alipay',
+      top: 0,
+    },
+    computed: {
+    },
+    mounted() {
+    },
+    methods: {
+      showDialogDrawer() {
+        this.visible = true;
+        // 防止页面滚动，只能让弹框滚动
+        // function getScroll() {
+        //   return {
+        //     left: window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft || 0,
+        //     top: window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
+        //   };
+        // }
+        this.top = $(document).scrollTop() // or getScroll().top
+        // console.log('aa', $('.main-content'));
+        body.style.cssText = 'overflow: hidden;';
+      },
+      cancelDialogDrawer() {
+        this.visible = false;
+        body.removeAttribute('style');
+        $(document).scrollTop(this.top)
+      },
+      changeTabActive(name) {
+        this.tabActive = name;
+      }
+    },
+    created() {}
+  })
+</script>
+    
+
+    <!-- 分享 -->
+    
+      <!-- https://github.com/overtrue/share.js -->
+<!-- 文章详情页的分享 -->
+<div class="social-share" data-sites="qq,wechat" data-wechat-qrcode-helper="<p>微信扫一扫即可分享！</p>"></div>
+
+<script src="/js/shareJs/social-share.min.js"></script>
+</script>
+
+<style>
+  .social-share {
+    margin: 20px 0;
+  }
+</style>
+
+
+    
+    
+    <!-- 评论 -->
+    <!-- 评论 -->
+
+  <div id="myComment">
+    
+      <div id="gitment-container"></div>
+
+    
+  </div>
+
+<!-- comment script in themes\hexo-theme-bamboo\layout\_partial\scripts\index.ejs -->
+
+
+  </div>
+
+  <!-- 目录 -->
+  <aside id='l_side'>
+  
+    
+      <section class="widget side_blogger">
+  <div class='content'>
+    
+    
+      <div class='text'>
+        
+          <h2>人间客</h2>
         
         
+        
+          <p><span id="jinrishici-sentence">wanglufee</span></p>
+          <script src="https://sdk.jinrishici.com/v2/browser/jinrishici.js" charset="utf-8"></script>
+        
+      </div>
+    
+    
+      <div class="social-wrapper">
+        
           
-            
-            <div class="year" data-aos="zoom-in-up">
-                <div class="bullet"></div>
-                <a href="/archives/2024">2024</a>
-            </div>
+            <a href="/2362487738@qq.com"
+              class="social fas fa-envelope flat-btn"
+              target="_blank"
+              rel="external nofollow noopener noreferrer">
+              
+            </a>
           
-          <li class="post-item" data-aos="fade-left">
+        
+          
+            <a href="https://github.com/wanglufee/"
+              class="social fab fa-github flat-btn"
+              target="_blank"
+              rel="external nofollow noopener noreferrer">
+              
+            </a>
+          
+        
+      </div>
+    
+  </div>
+</section>
+
+    
+  
+  
+  
+
+  <div class="layout_sticky">    
+    
+      
+<section class="widget side_toc">
+  
+  <header>
+    
+      <i style="color: " class="fas fa-list fa-fw" aria-hidden="true"></i><span class='name' style="color: ">本文目录</span>
+    
+  </header>
+
+
+  <div class='content'>
+    <div class="toc-main">
+      <div class="toc-content">
+        <!-- <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90"><span class="toc-text">语法分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9A%E4%B9%89%E6%8A%BD%E8%B1%A1%E8%AF%AD%E6%B3%95%E6%A0%91"><span class="toc-text">定义抽象语法树</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AF%8D%E6%B3%95%E8%A7%A3%E6%9E%90%E8%BF%87%E7%A8%8B"><span class="toc-text">词法解析过程</span></a></li></ol> -->
+        <div class="toc"></div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- 手机端目录按钮 -->
+<div id="toc-mobile-btn">
+  <i class="fas fa-list-ul" aria-hidden="true"></i>
+</div>
+
+      
+  <section class="widget side_recent_post">
+    
+  <header>
+    
+      <a style="color: " href='/tags/'><i class="fas fa-book fa-fw" aria-hidden="true"></i><span class='name'>最新文章</span></a>
+    
+  </header>
+
+
+    <div class='content'>
+      
+      <!-- hash算法 -->
+      
+      <div class="aside-list">
+        
+          <div class="aside-list-item">
             
+            
+            
+
             <div class="post-img-box">
               <a href="/2024/08/25/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B8%89%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90/" class="post-img " style="background-size: cover; 
                 background-position: center center;">
-                <img class="lazyload lazyload placeholder" src="https://pic4.zhimg.com/80/v2-e434e3a2888fb4efb1844845b8791d1f_1440w.webp" class="lazyload placeholder" data-srcset="https://pic4.zhimg.com/80/v2-e434e3a2888fb4efb1844845b8791d1f_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://pic4.zhimg.com/80/v2-e434e3a2888fb4efb1844845b8791d1f_1440w.webp" class="lazyload placeholder" data-srcset="https://pic4.zhimg.com/80/v2-e434e3a2888fb4efb1844845b8791d1f_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
               </a>
             </div>
             <div class="post-date-title">
               <div>
-                <span class="post-date">08-25</span>
+                
+                  <span class="post-date">08-25</span>
+                
               </div>
               <a class="post-title" href="/2024/08/25/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B8%89%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90/">数据库实现三语法分析</a>
             </div>
-          </li>
+          </div>
         
-          
-          <li class="post-item" data-aos="fade-left">
+          <div class="aside-list-item">
             
+            
+            
+
             <div class="post-img-box">
               <a href="/2024/08/17/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%BA%8C%E8%AF%8D%E6%B3%95%E5%88%86%E6%9E%90/" class="post-img " style="background-size: cover; 
                 background-position: center center;">
-                <img class="lazyload lazyload placeholder" src="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" class="lazyload placeholder" data-srcset="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" class="lazyload placeholder" data-srcset="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
               </a>
             </div>
             <div class="post-date-title">
               <div>
-                <span class="post-date">08-17</span>
+                
+                  <span class="post-date">08-17</span>
+                
               </div>
               <a class="post-title" href="/2024/08/17/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%BA%8C%E8%AF%8D%E6%B3%95%E5%88%86%E6%9E%90/">数据库实现二词法分析</a>
             </div>
-          </li>
+          </div>
         
-          
-          <li class="post-item" data-aos="fade-left">
+          <div class="aside-list-item">
             
+            
+            
+
             <div class="post-img-box">
               <a href="/2024/08/10/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B8%80%E6%9E%B6%E6%9E%84%E5%88%86%E6%9E%90/" class="post-img " style="background-size: cover; 
                 background-position: center center;">
-                <img class="lazyload lazyload placeholder" src="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" class="lazyload placeholder" data-srcset="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" class="lazyload placeholder" data-srcset="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
               </a>
             </div>
             <div class="post-date-title">
               <div>
-                <span class="post-date">08-10</span>
+                
+                  <span class="post-date">08-10</span>
+                
               </div>
               <a class="post-title" href="/2024/08/10/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B8%80%E6%9E%B6%E6%9E%84%E5%88%86%E6%9E%90/">数据库实现一架构分析</a>
             </div>
-          </li>
+          </div>
         
-          
-          <li class="post-item" data-aos="fade-left">
+          <div class="aside-list-item">
             
+            
+            
+
             <div class="post-img-box">
               <a href="/2024/04/28/linux%E9%A9%B1%E5%8A%A8%E5%AD%A6%E4%B9%A0%E4%B8%89/" class="post-img " style="background-size: cover; 
                 background-position: center center;">
-                <img class="lazyload lazyload placeholder" src="https://pic2.zhimg.com/80/v2-29e78b52051ce542adf6d786d61fbd19_1440w.webp" class="lazyload placeholder" data-srcset="https://pic2.zhimg.com/80/v2-29e78b52051ce542adf6d786d61fbd19_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://pic2.zhimg.com/80/v2-29e78b52051ce542adf6d786d61fbd19_1440w.webp" class="lazyload placeholder" data-srcset="https://pic2.zhimg.com/80/v2-29e78b52051ce542adf6d786d61fbd19_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
               </a>
             </div>
             <div class="post-date-title">
               <div>
-                <span class="post-date">04-28</span>
+                
+                  <span class="post-date">04-28</span>
+                
               </div>
               <a class="post-title" href="/2024/04/28/linux%E9%A9%B1%E5%8A%A8%E5%AD%A6%E4%B9%A0%E4%B8%89/">linux驱动学习三</a>
             </div>
-          </li>
+          </div>
         
-          
-          <li class="post-item" data-aos="fade-left">
+          <div class="aside-list-item">
             
+            
+            
+
             <div class="post-img-box">
               <a href="/2024/04/17/linux%E9%A9%B1%E5%8A%A8%E5%AD%A6%E4%B9%A0%E4%BA%8C/" class="post-img " style="background-size: cover; 
                 background-position: center center;">
-                <img class="lazyload lazyload placeholder" src="https://pica.zhimg.com/80/v2-61f99f8dcf899f54cad2a1aa28b21e44_1440w.webp" class="lazyload placeholder" data-srcset="https://pica.zhimg.com/80/v2-61f99f8dcf899f54cad2a1aa28b21e44_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://pica.zhimg.com/80/v2-61f99f8dcf899f54cad2a1aa28b21e44_1440w.webp" class="lazyload placeholder" data-srcset="https://pica.zhimg.com/80/v2-61f99f8dcf899f54cad2a1aa28b21e44_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
               </a>
             </div>
             <div class="post-date-title">
               <div>
-                <span class="post-date">04-17</span>
+                
+                  <span class="post-date">04-17</span>
+                
               </div>
               <a class="post-title" href="/2024/04/17/linux%E9%A9%B1%E5%8A%A8%E5%AD%A6%E4%B9%A0%E4%BA%8C/">linux驱动学习二</a>
             </div>
-          </li>
+          </div>
         
-          
-          <li class="post-item" data-aos="fade-left">
-            
-            <div class="post-img-box">
-              <a href="/2024/04/13/linux%E9%A9%B1%E5%8A%A8%E5%AD%A6%E4%B9%A0%E4%B8%80/" class="post-img " style="background-size: cover; 
-                background-position: center center;">
-                <img class="lazyload lazyload placeholder" src="https://pic4.zhimg.com/80/v2-83ea273b88e119d9615aed0d89aad4ab_1440w.webp" class="lazyload placeholder" data-srcset="https://pic4.zhimg.com/80/v2-83ea273b88e119d9615aed0d89aad4ab_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
-              </a>
-            </div>
-            <div class="post-date-title">
-              <div>
-                <span class="post-date">04-13</span>
-              </div>
-              <a class="post-title" href="/2024/04/13/linux%E9%A9%B1%E5%8A%A8%E5%AD%A6%E4%B9%A0%E4%B8%80/">linux驱动学习一</a>
-            </div>
-          </li>
-        
-          
-          <li class="post-item" data-aos="fade-left">
-            
-            <div class="post-img-box">
-              <a href="/2024/03/20/rust%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" class="post-img " style="background-size: cover; 
-                background-position: center center;">
-                <img class="lazyload lazyload placeholder" src="https://pic3.zhimg.com/80/v2-e5c15010b8ba4608a1974403a02a2da0_1440w.webp" class="lazyload placeholder" data-srcset="https://pic3.zhimg.com/80/v2-e5c15010b8ba4608a1974403a02a2da0_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
-              </a>
-            </div>
-            <div class="post-date-title">
-              <div>
-                <span class="post-date">03-20</span>
-              </div>
-              <a class="post-title" href="/2024/03/20/rust%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">rust基础知识</a>
-            </div>
-          </li>
-        
-          
-          <li class="post-item" data-aos="fade-left">
-            
-            <div class="post-img-box">
-              <a href="/2024/02/10/%E5%8C%BA%E5%9D%97%E9%93%BEdemo/" class="post-img " style="background-size: cover; 
-                background-position: center center;">
-                <img class="lazyload lazyload placeholder" src="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" class="lazyload placeholder" data-srcset="https://picx.zhimg.com/80/v2-9c50d3af0bc62a0e8b6e89e24c769317_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
-              </a>
-            </div>
-            <div class="post-date-title">
-              <div>
-                <span class="post-date">02-10</span>
-              </div>
-              <a class="post-title" href="/2024/02/10/%E5%8C%BA%E5%9D%97%E9%93%BEdemo/">区块链demo</a>
-            </div>
-          </li>
-        
-      </ul>
+      </div>
     </div>
   </section>
-  <div class="w-70">
+
     
   </div>
+</aside>
+
+  <!-- 图片放大 Wrap images with fancybox support -->
+  <script src="/js/wrapImage.js"></script>
 </div>
+
+<!-- 文章详情页背景图 -->
+<div id="appBgSwiper" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -2;"
+	:style="{'background-color': bgColor ? bgColor : 'transparent'}">
+	<transition-group tag="ul" :name="names">
+		<li v-for='(image,index) in img' :key='index' v-show="index === mark" class="bg-swiper-box">
+			<img :src="image" class="bg-swiper-img no-lazy">
+		</li>
+	</transition-group>
+</div>
+<script>
+	var vm = new Vue({
+		el: '#appBgSwiper',
+		data: {
+			names: '' || 'fade' || 'fade', // translate-fade fade
+			mark: 0,
+			img: [],
+			bgColor: '',
+			time: null
+		},
+		methods: {   //添加方法
+			change(i, m) {
+				if (i > m) {
+					// this.names = 'fade';
+				} else if (i < m) {
+					// this.names = 'fade';
+				} else {
+					return;
+				}
+				this.mark = i;
+			},
+			prev() {
+				// this.names = 'fade';
+				this.mark--;
+				if (this.mark === -1) {
+					this.mark = 3;
+					return
+				}
+			},
+			next() {
+				// this.names = 'fade';
+				this.mark++;
+				if (this.mark === this.img.length) {
+					this.mark = 0;
+					return
+				}
+			},
+			autoPlay() {
+				// this.names = 'fade';
+				this.mark++;
+				if (this.mark === this.img.length) {
+					this.mark = 0;
+					return
+				}
+			},
+			play() {
+				let bgImgDelay = '' || '180000'
+				let delay = parseInt(bgImgDelay) || 180000;
+				this.time = setInterval(this.autoPlay, delay);
+			},
+			enter() {
+				clearInterval(this.time);
+			},
+			leave() {
+				this.play();
+			}
+		},
+		created() {
+			this.play()
+		},
+		beforeDestroy() {
+			clearInterval(this.time);
+		},
+		mounted() {
+			let prop = '' || '';
+			let isImg = prop.includes('.bmp') || prop.includes('.jpg') || prop.includes('.png') || prop.includes('.tif') || prop.includes('.gif') || prop.includes('.pcx') || prop.includes('.tga') || prop.includes('.exif') || prop.includes('.fpx') || prop.includes('.psd') || prop.includes('.cdr') || prop.includes('.pcd') || prop.includes('.dxf') || prop.includes('.ufo') || prop.includes('.eps') || prop.includes('.ai') || prop.includes('.raw') || prop.includes('.WMF') || prop.includes('.webp') || prop.includes('.jpeg') || prop.includes('http://') || prop.includes('https://')
+			if (isImg) {
+				let img = prop.split(',');
+				let configRoot = '/'
+				let arrImg = [];
+				img.forEach(el => {
+					var Expression = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/;
+					var objExp = new RegExp(Expression);
+
+					if (objExp.test(el)) {
+						// http or https
+						arrImg.push(el);
+					} else {
+						// 非http or https开头
+						// 本地文件
+						let firstStr = el.charAt(0);
+						if (firstStr == '/') {
+							el = el.substr(1); // 删除第一个字符 '/',因为 configRoot最后一个字符为 /
+						}
+						el = configRoot + el;
+						arrImg.push(el);
+					}
+				})
+				this.img = arrImg;
+			} else {
+				this.bgColor = prop;
+			}
+		}
+	})
+</script>
+
+<style>
+	.bg-swiper-box {
+		position: absolute;
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	.bg-swiper-img {
+		object-fit: cover;
+		width: 100%;
+		height: 100%;
+	}
+</style>
+
+
+
+
+  <script>
+  function loadMermaid() {
+    if (document.getElementsByClassName('mermaid').length) {
+      if (window.mermaidJsLoad) mermaid.init()
+      else {
+        loadScript('https://unpkg.com/mermaid/dist/mermaid.min.js').then(() => {
+          window.mermaidJsLoad = true
+          mermaid.initialize({
+            theme: 'default',
+          })
+          if ('true') {
+            mermaid.init();
+          }
+        })
+      }
+    }
+  };
+  document.addEventListener("DOMContentLoaded", function () {
+    loadMermaid();
+  })
+
+  document.addEventListener('pjax:complete', function () {
+    loadMermaid();
+  })
+  
+</script>
+
 
       </main>
     </div>
