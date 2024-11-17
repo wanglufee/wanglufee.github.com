@@ -11,7 +11,7 @@
   <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-  <title>linux驱动学习一 | wanglufee</title>
+  <title>数据库实现四执行计划 | wanglufee</title>
 
   <link rel="icon" type="image/jpeg" href="/OIP-C.jpg">
   <link rel="stylesheet" href="https://at.alicdn.com/t/font_1911880_c1nvbyezg17.css">
@@ -472,21 +472,21 @@
 
 
 <div class="post-detail-header" id="thumbnail_canvas" style="background-repeat: no-repeat; background-size: cover; 
-  background-position: center center;position: relative;background-image:url('https://pic4.zhimg.com/80/v2-83ea273b88e119d9615aed0d89aad4ab_1440w.webp')">
+  background-position: center center;position: relative;background-image:url('https://picx.zhimg.com/80/v2-85c31120acff76826ab53ea8934ef4bb_1440w.webp')">
   <div class="post-detail-header-mask"></div>
   <canvas id="header_canvas"style="position:absolute;bottom:0;pointer-events:none;"></canvas>
   
   <div class="post-detail-header_info-box">
     <div class="title-box">
       <span class="title">
-        linux驱动学习一
+        数据库实现四执行计划
       </span>
     </div>
     
     
       
         <span class="post-detail-header_date">
-          <i class="fas fa-calendar"></i> Published in：2024-04-13 |
+          <i class="fas fa-calendar"></i> Published in：2024-08-31 |
         </span>
       
 
@@ -494,8 +494,8 @@
         <span class="post-detail-header_categories">
           <i class="iconfont iconbookmark1"></i> category：
           
-            <a href="/categories/linux/" class="post-detail-header_category">
-              linux
+            <a href="/categories/rust%EF%BC%8C%E6%95%B0%E6%8D%AE%E5%BA%93/" class="post-detail-header_category">
+              rust，数据库
             </a>
           
         </span>
@@ -504,11 +504,11 @@
       
         <div class="post-detail-header_wordcount">
           <span class="totalcount">
-            <i class="fas fa-file-text-o"></i> Words: 1.3k |
+            <i class="fas fa-file-text-o"></i> Words: 731 |
           </span>
   
           <span class="min2read">
-            <i class="fas fa-clock"></i> Reading time: 5min |
+            <i class="fas fa-clock"></i> Reading time: 3min |
           </span>
   
           
@@ -535,56 +535,35 @@
   <div class="main-content">
     <article class="post post-detail">
       <div class="post-content">
-        <h1 id="linux内核编译"><a href="#linux内核编译" class="headerlink" title="linux内核编译"></a>linux内核编译</h1><blockquote>
-<p>linux 内核配置</p>
-</blockquote>
-<p>比较推荐的是通过命令 <code>make menuconfig</code> 命令来进行配置，它不依赖于QT或GTK+，且非常直观，运行此命令配置之后，会生成一个 .config 配置文件，记录哪些部分被编译进内核，哪些部分被编译为模块，或者不编译。</p>
-<p>linux 配置系统由三部分组成</p>
-<ul>
-<li>Makefile: 分布在Linux内核源代码中，定义Linux内核的编译规则。</li>
-<li>Kconfig: 给用户提供配置选择的功能</li>
-<li>配置工具: 包括配置命令解释器和配置用户界面</li>
-</ul>
-<p>首先来看 Kconfig 文件</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">config TTY_PRINTK</span><br><span class="line">       tristate <span class="string">&quot;TTY driver to output user messages via printk&quot;</span></span><br><span class="line">       depends on EXPERT &amp;&amp; TTY</span><br><span class="line">       default n</span><br><span class="line">       ---<span class="built_in">help</span>---</span><br><span class="line">        If you say Y here, the support <span class="keyword">for</span> writing user messages (i.e.</span><br><span class="line">        console messages) via printk is available.</span><br><span class="line">        The feature is useful to inline user messages with kernel</span><br><span class="line">        messages.</span><br><span class="line">        In order to use this feature, you should output user messages</span><br><span class="line">        to /dev/ttyprintk or redirect console to this TTY.</span><br><span class="line">        If unsure, say N.</span><br></pre></td></tr></table></figure>
-<p>config 后跟的是配置项的符号， tristate 代表这个选项是一个三态选项，分别为 Y , N , M,其中 Y 表示编译进内核中， N 表示不进行编译， M 表示编译成内核模块，后面的字符则是在配置界面显示的内容。此处除了 tristate 还有 bool 等。 depends on 则表示这个模块依赖的模块有哪些，多个模块用 <code>&amp;&amp;</code> 来连接， default 表示默认值。 help 下跟的则是在配置中的帮助信息。</p>
-<p>接下来看 Kbuild Makefile 文件</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">obj-$(CONfiG_ISDN) += isdn.o</span><br><span class="line">obj-$(CONfiG_ISDN_PPP_BSDCOMP) += isdn_bsdcomp.o</span><br></pre></td></tr></table></figure>
-<p>此处 obj-$(xxx) 其中的 xxx 即为配置项符号， 命名的方式是在 Kconfig 的符号前加了 CONFIG_ 字段， 当其值为 y 时，会根据后面的 .o 文件去找对应的 .c 或 .s 文件，编译进内核中，当为 n 时，则不进行编译， 为 m 时，则寻找对应的文件，编译为模块的形式， 这里对应了用户配置时的选择。 </p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#</span></span><br><span class="line"><span class="comment"># Makefile for the linux ext2-filesystem routines.</span></span><br><span class="line"><span class="comment">#</span></span><br><span class="line">obj-$(CONfiG_EXT2_FS) += ext2.o</span><br><span class="line">ext2-y := balloc.o dir.o file.o fsync.o ialloc.o inode.o \</span><br><span class="line">       ioctl.o namei.o super.o symlink.o</span><br></pre></td></tr></table></figure>
-<p>若一个模块由多个文件构成，则会去找对应的 .o 文件，最终链接生成最终的 .o 文件。此处若配置了 ext2.o ，则会去找 balloc.o  dir.o 等文件，最终生成 ext2.o 。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">obj-$(CONfiG_EXT2_FS) += ext2/</span><br></pre></td></tr></table></figure>
-<p>目录层次，当配置为 y 或者 m 时，会迭代 ext2 目录。</p>
-<h1 id="linux内核模块程序结构"><a href="#linux内核模块程序结构" class="headerlink" title="linux内核模块程序结构"></a>linux内核模块程序结构</h1><p>一般内核模块主要由以下几部分组成</p>
-<ul>
-<li>模块加载函数： 当使用 <code>insmod</code> 或 <code>modprobe</code> 命令加载模块时，模块加载函数被调用，完成初始化工作。</li>
-<li>模块卸载函数： 当使用 <code>rmmod</code> 命令卸载模块时，会调用模块卸载函数，完成卸载功能。</li>
-<li>模块许可声明： 声明内核模块的许可权限。(大多数情况下license为 GPL v2)</li>
-<li>模块参数(可选)： 模块加载时可传递给模块的值。</li>
-<li>模块导出符号(可选)： 内核模块导出的符号，若导出则其他模块可以使用本模块中的变量或函数。</li>
-<li>模块作者等信息声明(可选)</li>
-</ul>
-<h2 id="模块加载函数"><a href="#模块加载函数" class="headerlink" title="模块加载函数"></a>模块加载函数</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">int</span> _ _init <span class="title function_">initialization_function</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">/* 初始化代码 */</span></span><br><span class="line">&#125;</span><br><span class="line">module_init(initialization_function);</span><br></pre></td></tr></table></figure>
-<p>模块加载函数一般以 <strong>__init</strong> 声明，而模块加载函数以 <strong>module_init(函数名)</strong> 的形式被指定，它返回整形值，模块初始化成功时返回0。失败则返回相应的错误码。</p>
-<p>还可以使用 <strong>request_module(module_name)</strong> 来灵活加载其他内核模块。</p>
-<h2 id="模块卸载函数"><a href="#模块卸载函数" class="headerlink" title="模块卸载函数"></a>模块卸载函数</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">void</span> _ _exit <span class="title function_">cleanup_function</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">      <span class="comment">/* 释放代码 */</span></span><br><span class="line">&#125;</span><br><span class="line">module_exit(cleanup_function);</span><br></pre></td></tr></table></figure>
-<p>内核卸载函数一般以 <strong>__exit</strong> 声明，模块卸载函数在模块卸载时执行，不返回任何值，必须以 <strong>module_exit(函数名)</strong> 的形式来指定。若模块被编译进内核，则卸载函数会被省略。</p>
-<h2 id="模块参数"><a href="#模块参数" class="headerlink" title="模块参数"></a>模块参数</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="type">char</span> *book_name = <span class="string">&quot;dissecting Linux Device Driver&quot;</span>;</span><br><span class="line">module_param(book_name, charp, S_IRUGO);</span><br><span class="line"><span class="type">static</span> <span class="type">int</span> book_num = <span class="number">4000</span>;</span><br><span class="line">module_param(book_num, <span class="type">int</span>, S_IRUGO);</span><br></pre></td></tr></table></figure>
-<p>可以使用 <strong>modele_param(参数名,参数类型,参数读&#x2F;写权限)</strong> 为模块定义一个参数。 在加载模块时可以向模块传递参数 <code>insmod 模块名 参数名=参数值</code>。如果不传递，则使用定义的缺省值。 参数的类型可以为<br><strong>byte、short、ushort、int、uint、long、ulong、charp（字符指针）​、bool或invbool（布尔的反）</strong>。</p>
-<p>此外模块还可以拥有参数数组，可以通过 <code>module_param_array(数组名,数组类型,数组长,参数读/写权限)</code> 来定义。</p>
-<p>模块被加载后在 &#x2F;sys&#x2F;module 目录下会出现以模块名命名的目录，如果包含可读写的参数时，目录下还将包含 parameters 目录，其中包含参数名的一系列文件节点。</p>
-<h2 id="导出符号"><a href="#导出符号" class="headerlink" title="导出符号"></a>导出符号</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EXPORT_SYMBOL(符号名);</span><br><span class="line">EXPORT_SYMBOL_GPL(符号名);</span><br></pre></td></tr></table></figure>
-<p>模块可以使用上述两个宏导出符号，其他模块使用时只需要提前声明即可。 <strong>EXPORT_SYMBOL_GPL</strong>导出的符号只适用于包含GPL许可权的模块。</p>
-<h2 id="模块声明与描述"><a href="#模块声明与描述" class="headerlink" title="模块声明与描述"></a>模块声明与描述</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">MODULE_AUTHOR(author);</span><br><span class="line">MODULE_DESCRIPTION(description);</span><br><span class="line">MODULE_VERSION(version_string);</span><br><span class="line">MODULE_DEVICE_TABLE(table_info);</span><br><span class="line">MODULE_ALIAS(alternate_name);</span><br></pre></td></tr></table></figure>
-<p>上述宏分别用于声明模块的作者、描述、版本、设备表和别名。</p>
+        <h2 id="执行计划"><a href="#执行计划" class="headerlink" title="执行计划"></a>执行计划</h2><p>从语法分析阶段结束后我们拿到了抽象语法树，之后这个抽象语法树需要交给执行计划，通过执行计划去生成对应的物理计划。</p>
+<p>首先，我们可以定义一个执行计划的节点 Node，这个节点对应了不同的语句生成的抽象语法树，例如，创建表，查询表，插入数据等。然后我们定义一个执行计划 Plan，这个执行计划内部是执行计划节点。</p>
+<h2 id="执行节点定义"><a href="#执行节点定义" class="headerlink" title="执行节点定义"></a>执行节点定义</h2><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">enum</span> <span class="title class_">Node</span> &#123;</span><br><span class="line">    CreateTable &#123;</span><br><span class="line">        schema: Table,</span><br><span class="line">    &#125;,</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们希望执行节点能够和抽象语法树相对应，这里使用枚举，在定义时可以和抽象语法树的定义相对应。</p>
+<p>在上一节实现的创建表的抽象语法树中主要包含了表名和列信息，这里我们定义一个 Table 结构体，来保存表信息。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Table</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> name: <span class="type">String</span>,</span><br><span class="line">    <span class="keyword">pub</span> columns: <span class="type">Vec</span>&lt;Column&gt;,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Column</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> name: <span class="type">String</span>,</span><br><span class="line">    <span class="keyword">pub</span> datatype: DataType,</span><br><span class="line">    <span class="keyword">pub</span> nullable: <span class="type">bool</span>,</span><br><span class="line">    <span class="keyword">pub</span> default: <span class="type">Option</span>&lt;Value&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的字段与我们抽象语法树里的内容对应。</p>
+<h2 id="执行计划-1"><a href="#执行计划-1" class="headerlink" title="执行计划"></a>执行计划</h2><p>执行计划当中包含了执行节点：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Plan</span>(<span class="keyword">pub</span> Node);</span><br></pre></td></tr></table></figure>
+<p>执行计划通过不同的执行节点，来生成相应的物理计划。</p>
+<p>为执行计划提供一个 build 方法，传入参数使用解析生成的抽象语法树，生成一个执行计划。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> <span class="title class_">Plan</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">build</span>(stm: Statement) <span class="punctuation">-&gt;</span> <span class="keyword">Self</span> &#123;</span><br><span class="line">        Planner::<span class="title function_ invoke__">new</span>().<span class="title function_ invoke__">build</span>(stm)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里对抽象语法树的解析工作由 Planner 来完成。</p>
+<p>对 Planner 的定义:</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Planner</span>;</span><br></pre></td></tr></table></figure>
+<p>由于 Planner 无需保存任何信息，只需要将传入的抽象语法树解析生成对应的 Plan 即可，因此在定义时无需任何内部元素。</p>
+<p>为 Planner 实现解析逻辑：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> <span class="title class_">Planner</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">new</span>() <span class="punctuation">-&gt;</span> <span class="keyword">Self</span> &#123;</span><br><span class="line">        <span class="keyword">Self</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">build</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, stm: Statement) <span class="punctuation">-&gt;</span> Plan &#123;</span><br><span class="line">        <span class="title function_ invoke__">Plan</span>(<span class="keyword">self</span>.<span class="title function_ invoke__">build_statment</span>(stm))</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">build_statment</span>(&amp;<span class="keyword">self</span>, stm: Statement) <span class="punctuation">-&gt;</span> Node &#123;</span><br><span class="line">        <span class="keyword">match</span> stm &#123;</span><br><span class="line">            Statement::CreateTable &#123; name, columns &#125; =&gt; &#123;</span><br><span class="line">                Node::CreateTable &#123; schema: Table&#123;</span><br><span class="line">                    name,</span><br><span class="line">                    columns: columns.<span class="title function_ invoke__">into_iter</span>().<span class="title function_ invoke__">map</span>(|c| &#123;</span><br><span class="line">                        <span class="keyword">let</span> <span class="variable">nullable</span> = c.nullable.<span class="title function_ invoke__">unwrap_or</span>(<span class="literal">true</span>);</span><br><span class="line">                        <span class="keyword">let</span> <span class="variable">default</span> = <span class="keyword">match</span> c.default &#123;</span><br><span class="line">                            <span class="title function_ invoke__">Some</span>(expr) =&gt; &#123;</span><br><span class="line">                                <span class="title function_ invoke__">Some</span>(Value::<span class="title function_ invoke__">from_expression</span>(expr))</span><br><span class="line">                            &#125;,</span><br><span class="line">                            <span class="literal">None</span> <span class="keyword">if</span> nullable =&gt; <span class="title function_ invoke__">Some</span>(Value::Null),</span><br><span class="line">                            <span class="literal">None</span> =&gt; <span class="literal">None</span>,</span><br><span class="line">                        &#125;;</span><br><span class="line">                        Column &#123;</span><br><span class="line">                            name: c.name,</span><br><span class="line">                            datatype: c.datatype,</span><br><span class="line">                            nullable,</span><br><span class="line">                            default,</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;).<span class="title function_ invoke__">collect</span>(),</span><br><span class="line">                &#125; &#125;</span><br><span class="line">            &#125;,</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过内部的 build_statment 方法解析抽象语法树，生成执行节点，在通过 build 方法组装成一个 Plan。</p>
+<p>由于执行节点出的 Column 与解析阶段的 Column 是不相同的，因此需要对抽象语法树生成的 columns，进行相应的修改。</p>
+<p>至此我们通过解析抽象语法树，生成了对应的执行节点，并生成了对应的执行计划，下一节则会通过执行器，来执行生成的执行计划，最终通过底层的执行引擎，执行相关的操作。</p>
 
       </div>
       <div class="post-tags-categories">
         
         <div class="tags">
           
-            <a href="/tags/linux%E9%A9%B1%E5%8A%A8%E5%AD%A6%E4%B9%A0/" class="">
-              linux驱动学习
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="">
+              数据库
             </a>
           
         </div>
@@ -598,7 +577,7 @@
     </li>
     <li class="post-copyright-link">
     <strong>link:  </strong>
-    <a href="/2024/04/13/linux驱动学习一/" target="_blank" title="linux驱动学习一">http://wanglufee.github.io/2024/04/13/linux驱动学习一/</a>
+    <a href="/2024/08/31/数据库实现四执行计划/" target="_blank" title="数据库实现四执行计划">http://wanglufee.github.io/2024/08/31/数据库实现四执行计划/</a>
     </li>
     <li class="post-copyright-license">
       <strong>Copyright notice:   </strong>
@@ -616,40 +595,21 @@
 
 
 
-  
-  <div class="post-nav-prev post-nav-item">
-    <div class="post-nav-img" style="background-size: cover; 
-      background-position: center center;">
-      <img class="lazyload lazyload placeholder" src="https://pica.zhimg.com/80/v2-61f99f8dcf899f54cad2a1aa28b21e44_1440w.webp" class="lazyload placeholder" data-srcset="https://pica.zhimg.com/80/v2-61f99f8dcf899f54cad2a1aa28b21e44_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
-    </div>
-    <a href="/2024/04/17/linux%E9%A9%B1%E5%8A%A8%E5%AD%A6%E4%B9%A0%E4%BA%8C/" class="post-nav-link">
-      <div class="title">
-        <i class="fas fa-angle-left"></i> Prev:
-        <div class="title-text">linux驱动学习二</div>
-      </div>
-      
-      <!-- <div class="content">
-        linux文件系统与设备文件linux下一切皆文件，而驱动同样也需要和文件系统交互，这章来简单看下文件系统与设备文件。
-
-      </div> -->
-    </a>
-  </div>
-
 
 
   
   <div class="post-nav-next post-nav-item">
     <div class="post-nav-img" style="background-size: cover; 
       background-position: center center;">
-      <img class="lazyload lazyload placeholder" src="https://pic3.zhimg.com/80/v2-e5c15010b8ba4608a1974403a02a2da0_1440w.webp" class="lazyload placeholder" data-srcset="https://pic3.zhimg.com/80/v2-e5c15010b8ba4608a1974403a02a2da0_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" src="" alt="">
+      <img class="lazyload lazyload placeholder" src="https://pic4.zhimg.com/80/v2-e434e3a2888fb4efb1844845b8791d1f_1440w.webp" class="lazyload placeholder" data-srcset="https://pic4.zhimg.com/80/v2-e434e3a2888fb4efb1844845b8791d1f_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" src="" alt="">
     </div>
-    <a href="/2024/03/20/rust%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" class="post-nav-link">
+    <a href="/2024/08/25/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B8%89%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90/" class="post-nav-link">
       <div class="title">
         Next: <i class="fas fa-angle-right"></i>
-        <div class="title-text">rust基础知识</div>
+        <div class="title-text">数据库实现三语法分析</div>
       </div>
       <!-- <div class="content">
-        变量与可变性在rust中通过 let 关键字来声明一个变量，并未变量绑定一个值，变量默认为不可变，即初始化之后无法对变量
+        语法分析在此之前我们已经实现了词法分析，将每个词都转换为了对应的 TOKEN ，现在我们的工作就需要将这些 TOKEN 
       </div> -->
     </a>
   </div>
@@ -843,7 +803,7 @@
   <div class='content'>
     <div class="toc-main">
       <div class="toc-content">
-        <!-- <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#linux%E5%86%85%E6%A0%B8%E7%BC%96%E8%AF%91"><span class="toc-text">linux内核编译</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#linux%E5%86%85%E6%A0%B8%E6%A8%A1%E5%9D%97%E7%A8%8B%E5%BA%8F%E7%BB%93%E6%9E%84"><span class="toc-text">linux内核模块程序结构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E5%8A%A0%E8%BD%BD%E5%87%BD%E6%95%B0"><span class="toc-text">模块加载函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E5%8D%B8%E8%BD%BD%E5%87%BD%E6%95%B0"><span class="toc-text">模块卸载函数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E5%8F%82%E6%95%B0"><span class="toc-text">模块参数</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AF%BC%E5%87%BA%E7%AC%A6%E5%8F%B7"><span class="toc-text">导出符号</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A8%A1%E5%9D%97%E5%A3%B0%E6%98%8E%E4%B8%8E%E6%8F%8F%E8%BF%B0"><span class="toc-text">模块声明与描述</span></a></li></ol></li></ol> -->
+        <!-- <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92"><span class="toc-text">执行计划</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E8%8A%82%E7%82%B9%E5%AE%9A%E4%B9%89"><span class="toc-text">执行节点定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92-1"><span class="toc-text">执行计划</span></a></li></ol> -->
         <div class="toc"></div>
       </div>
     </div>
