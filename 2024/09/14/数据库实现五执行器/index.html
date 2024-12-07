@@ -11,7 +11,7 @@
   <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-  <title>数据库实现四执行计划 | wanglufee</title>
+  <title>数据库实现五执行器 | wanglufee</title>
 
   <link rel="icon" type="image/jpeg" href="/OIP-C.jpg">
   <link rel="stylesheet" href="https://at.alicdn.com/t/font_1911880_c1nvbyezg17.css">
@@ -472,21 +472,21 @@
 
 
 <div class="post-detail-header" id="thumbnail_canvas" style="background-repeat: no-repeat; background-size: cover; 
-  background-position: center center;position: relative;background-image:url('https://picx.zhimg.com/80/v2-85c31120acff76826ab53ea8934ef4bb_1440w.webp')">
+  background-position: center center;position: relative;background-image:url('https://pica.zhimg.com/80/v2-61f99f8dcf899f54cad2a1aa28b21e44_1440w.webp')">
   <div class="post-detail-header-mask"></div>
   <canvas id="header_canvas"style="position:absolute;bottom:0;pointer-events:none;"></canvas>
   
   <div class="post-detail-header_info-box">
     <div class="title-box">
       <span class="title">
-        数据库实现四执行计划
+        数据库实现五执行器
       </span>
     </div>
     
     
       
         <span class="post-detail-header_date">
-          <i class="fas fa-calendar"></i> Published in：2024-08-31 |
+          <i class="fas fa-calendar"></i> Published in：2024-09-14 |
         </span>
       
 
@@ -504,11 +504,11 @@
       
         <div class="post-detail-header_wordcount">
           <span class="totalcount">
-            <i class="fas fa-file-text-o"></i> Words: 731 |
+            <i class="fas fa-file-text-o"></i> Words: 321 |
           </span>
   
           <span class="min2read">
-            <i class="fas fa-clock"></i> Reading time: 3min |
+            <i class="fas fa-clock"></i> Reading time: 1min |
           </span>
   
           
@@ -535,27 +535,16 @@
   <div class="main-content">
     <article class="post post-detail">
       <div class="post-content">
-        <h2 id="执行计划"><a href="#执行计划" class="headerlink" title="执行计划"></a>执行计划</h2><p>从语法分析阶段结束后我们拿到了抽象语法树，之后这个抽象语法树需要交给执行计划，通过执行计划去生成对应的物理计划。</p>
-<p>首先，我们可以定义一个执行计划的节点 Node，这个节点对应了不同的语句生成的抽象语法树，例如，创建表，查询表，插入数据等。然后我们定义一个执行计划 Plan，这个执行计划内部是执行计划节点。</p>
-<h2 id="执行节点定义"><a href="#执行节点定义" class="headerlink" title="执行节点定义"></a>执行节点定义</h2><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">enum</span> <span class="title class_">Node</span> &#123;</span><br><span class="line">    CreateTable &#123;</span><br><span class="line">        schema: Table,</span><br><span class="line">    &#125;,</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>我们希望执行节点能够和抽象语法树相对应，这里使用枚举，在定义时可以和抽象语法树的定义相对应。</p>
-<p>在上一节实现的创建表的抽象语法树中主要包含了表名和列信息，这里我们定义一个 Table 结构体，来保存表信息。</p>
-<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Table</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> name: <span class="type">String</span>,</span><br><span class="line">    <span class="keyword">pub</span> columns: <span class="type">Vec</span>&lt;Column&gt;,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Column</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> name: <span class="type">String</span>,</span><br><span class="line">    <span class="keyword">pub</span> datatype: DataType,</span><br><span class="line">    <span class="keyword">pub</span> nullable: <span class="type">bool</span>,</span><br><span class="line">    <span class="keyword">pub</span> default: <span class="type">Option</span>&lt;Value&gt;,</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里的字段与我们抽象语法树里的内容对应。</p>
-<h2 id="执行计划-1"><a href="#执行计划-1" class="headerlink" title="执行计划"></a>执行计划</h2><p>执行计划当中包含了执行节点：</p>
-<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Plan</span>(<span class="keyword">pub</span> Node);</span><br></pre></td></tr></table></figure>
-<p>执行计划通过不同的执行节点，来生成相应的物理计划。</p>
-<p>为执行计划提供一个 build 方法，传入参数使用解析生成的抽象语法树，生成一个执行计划。</p>
-<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> <span class="title class_">Plan</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">build</span>(stm: Statement) <span class="punctuation">-&gt;</span> <span class="keyword">Self</span> &#123;</span><br><span class="line">        Planner::<span class="title function_ invoke__">new</span>().<span class="title function_ invoke__">build</span>(stm)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>这里对抽象语法树的解析工作由 Planner 来完成。</p>
-<p>对 Planner 的定义:</p>
-<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Planner</span>;</span><br></pre></td></tr></table></figure>
-<p>由于 Planner 无需保存任何信息，只需要将传入的抽象语法树解析生成对应的 Plan 即可，因此在定义时无需任何内部元素。</p>
-<p>为 Planner 实现解析逻辑：</p>
-<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> <span class="title class_">Planner</span> &#123;</span><br><span class="line">    <span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">new</span>() <span class="punctuation">-&gt;</span> <span class="keyword">Self</span> &#123;</span><br><span class="line">        <span class="keyword">Self</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">pub</span> <span class="keyword">fn</span> <span class="title function_">build</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, stm: Statement) <span class="punctuation">-&gt;</span> Plan &#123;</span><br><span class="line">        <span class="title function_ invoke__">Plan</span>(<span class="keyword">self</span>.<span class="title function_ invoke__">build_statment</span>(stm))</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">build_statment</span>(&amp;<span class="keyword">self</span>, stm: Statement) <span class="punctuation">-&gt;</span> Node &#123;</span><br><span class="line">        <span class="keyword">match</span> stm &#123;</span><br><span class="line">            Statement::CreateTable &#123; name, columns &#125; =&gt; &#123;</span><br><span class="line">                Node::CreateTable &#123; schema: Table&#123;</span><br><span class="line">                    name,</span><br><span class="line">                    columns: columns.<span class="title function_ invoke__">into_iter</span>().<span class="title function_ invoke__">map</span>(|c| &#123;</span><br><span class="line">                        <span class="keyword">let</span> <span class="variable">nullable</span> = c.nullable.<span class="title function_ invoke__">unwrap_or</span>(<span class="literal">true</span>);</span><br><span class="line">                        <span class="keyword">let</span> <span class="variable">default</span> = <span class="keyword">match</span> c.default &#123;</span><br><span class="line">                            <span class="title function_ invoke__">Some</span>(expr) =&gt; &#123;</span><br><span class="line">                                <span class="title function_ invoke__">Some</span>(Value::<span class="title function_ invoke__">from_expression</span>(expr))</span><br><span class="line">                            &#125;,</span><br><span class="line">                            <span class="literal">None</span> <span class="keyword">if</span> nullable =&gt; <span class="title function_ invoke__">Some</span>(Value::Null),</span><br><span class="line">                            <span class="literal">None</span> =&gt; <span class="literal">None</span>,</span><br><span class="line">                        &#125;;</span><br><span class="line">                        Column &#123;</span><br><span class="line">                            name: c.name,</span><br><span class="line">                            datatype: c.datatype,</span><br><span class="line">                            nullable,</span><br><span class="line">                            default,</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;).<span class="title function_ invoke__">collect</span>(),</span><br><span class="line">                &#125; &#125;</span><br><span class="line">            &#125;,</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>通过内部的 build_statment 方法解析抽象语法树，生成执行节点，在通过 build 方法组装成一个 Plan。</p>
-<p>由于执行节点出的 Column 与解析阶段的 Column 是不相同的，因此需要对抽象语法树生成的 columns，进行相应的修改。</p>
-<p>至此我们通过解析抽象语法树，生成了对应的执行节点，并生成了对应的执行计划，下一节则会通过执行器，来执行生成的执行计划，最终通过底层的执行引擎，执行相关的操作。</p>
+        <h2 id="执行器"><a href="#执行器" class="headerlink" title="执行器"></a>执行器</h2><p>执行器是负责执行 SQL 的组件，主要是对执行计划中的节点进行执行。然后返回正确的结果给用户。执行器在执行的过程中还会与存储引擎进行交互。这里先定义执行器，之后完善存储引擎之后，执行器才能正常工作。</p>
+<h2 id="执行器定义"><a href="#执行器定义" class="headerlink" title="执行器定义"></a>执行器定义</h2><p>这里我们将执行器定义为一个 trait ，不同的执行节点对应的不同的执行器的实现。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">trait</span> <span class="title class_">Executor</span> &#123;</span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">execute</span>(&amp;<span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;ResultSet&gt;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 ResultSet 是执行返回的结果。不同的 SQL 类型返回结果不相同。我们定义为枚举类型。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">enum</span> <span class="title class_">ResultSet</span> &#123;</span><br><span class="line">    CreateTable &#123;</span><br><span class="line">        table_name: <span class="type">String</span>,</span><br><span class="line">    &#125;,</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里创建表成功后返回表名。</p>
+<p>然后实现具体的创建表的执行器。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">CreateTable</span> &#123;</span><br><span class="line">    schema: Table,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">impl</span> <span class="title class_">Executor</span> <span class="keyword">for</span> <span class="title class_">CreateTable</span> &#123;</span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">execute</span>(&amp;<span class="keyword">self</span>) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;ResultSet&gt; &#123;</span><br><span class="line">        todo!()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里具体的执行需要去调用存储引擎的接口，我们先留空。</p>
+<p>这样一个简单的存储引擎就定义好了。之后等我们完成了存储引擎相关的接口，就可以从这个执行器去调用存储引擎的接口执行相应的 SQL 了。</p>
 
       </div>
       <div class="post-tags-categories">
@@ -577,7 +566,7 @@
     </li>
     <li class="post-copyright-link">
     <strong>link:  </strong>
-    <a href="/2024/08/31/数据库实现四执行计划/" target="_blank" title="数据库实现四执行计划">http://wanglufee.github.io/2024/08/31/数据库实现四执行计划/</a>
+    <a href="/2024/09/14/数据库实现五执行器/" target="_blank" title="数据库实现五执行器">http://wanglufee.github.io/2024/09/14/数据库实现五执行器/</a>
     </li>
     <li class="post-copyright-license">
       <strong>Copyright notice:   </strong>
@@ -595,39 +584,21 @@
 
 
 
-  
-  <div class="post-nav-prev post-nav-item">
-    <div class="post-nav-img" style="background-size: cover; 
-      background-position: center center;">
-      <img class="lazyload lazyload placeholder" src="https://pica.zhimg.com/80/v2-61f99f8dcf899f54cad2a1aa28b21e44_1440w.webp" class="lazyload placeholder" data-srcset="https://pica.zhimg.com/80/v2-61f99f8dcf899f54cad2a1aa28b21e44_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
-    </div>
-    <a href="/2024/09/14/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%BA%94%E6%89%A7%E8%A1%8C%E5%99%A8/" class="post-nav-link">
-      <div class="title">
-        <i class="fas fa-angle-left"></i> Prev:
-        <div class="title-text">数据库实现五执行器</div>
-      </div>
-      
-      <!-- <div class="content">
-        执行器执行器是负责执行 SQL 的组件，主要是对执行计划中的节点进行执行。然后返回正确的结果给用户。执行器在执行的过程中
-      </div> -->
-    </a>
-  </div>
-
 
 
   
   <div class="post-nav-next post-nav-item">
     <div class="post-nav-img" style="background-size: cover; 
       background-position: center center;">
-      <img class="lazyload lazyload placeholder" src="https://pic4.zhimg.com/80/v2-e434e3a2888fb4efb1844845b8791d1f_1440w.webp" class="lazyload placeholder" data-srcset="https://pic4.zhimg.com/80/v2-e434e3a2888fb4efb1844845b8791d1f_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" src="" alt="">
+      <img class="lazyload lazyload placeholder" src="https://picx.zhimg.com/80/v2-85c31120acff76826ab53ea8934ef4bb_1440w.webp" class="lazyload placeholder" data-srcset="https://picx.zhimg.com/80/v2-85c31120acff76826ab53ea8934ef4bb_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" src="" alt="">
     </div>
-    <a href="/2024/08/25/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B8%89%E8%AF%AD%E6%B3%95%E5%88%86%E6%9E%90/" class="post-nav-link">
+    <a href="/2024/08/31/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%9B%9B%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92/" class="post-nav-link">
       <div class="title">
         Next: <i class="fas fa-angle-right"></i>
-        <div class="title-text">数据库实现三语法分析</div>
+        <div class="title-text">数据库实现四执行计划</div>
       </div>
       <!-- <div class="content">
-        语法分析在此之前我们已经实现了词法分析，将每个词都转换为了对应的 TOKEN ，现在我们的工作就需要将这些 TOKEN 
+        执行计划从语法分析阶段结束后我们拿到了抽象语法树，之后这个抽象语法树需要交给执行计划，通过执行计划去生成对应的物理计划。
       </div> -->
     </a>
   </div>
@@ -821,7 +792,7 @@
   <div class='content'>
     <div class="toc-main">
       <div class="toc-content">
-        <!-- <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92"><span class="toc-text">执行计划</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E8%8A%82%E7%82%B9%E5%AE%9A%E4%B9%89"><span class="toc-text">执行节点定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E8%AE%A1%E5%88%92-1"><span class="toc-text">执行计划</span></a></li></ol> -->
+        <!-- <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E5%99%A8"><span class="toc-text">执行器</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%89%A7%E8%A1%8C%E5%99%A8%E5%AE%9A%E4%B9%89"><span class="toc-text">执行器定义</span></a></li></ol> -->
         <div class="toc"></div>
       </div>
     </div>
