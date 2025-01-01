@@ -11,7 +11,7 @@
   <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-  <title>Categories | wanglufee</title>
+  <title>数据库实现十磁盘存储引擎 | wanglufee</title>
 
   <link rel="icon" type="image/jpeg" href="/OIP-C.jpg">
   <link rel="stylesheet" href="https://at.alicdn.com/t/font_1911880_c1nvbyezg17.css">
@@ -459,83 +459,677 @@
 </header>
         <!-- 内容区域 -->
         
-<div class="bg-dark-floor" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -2;"></div>
-<div class="bg-light-floor-categories" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -3;"></div>
+ <!-- prismjs 代码高亮 -->
+ 
 
-<div class="categories-header" style="background-image:url('https://pic2.zhimg.com/80/v2-7c496c95897fb15768593cc5170c8b1a_1440w.jpg?source=1940ef5c')">
-    <div class="categories-header-title">
-        categories
+
+<div class="bg-dark-floor" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -1;"></div>
+
+
+  <!-- 文章详情页顶部图片和标题 -->
+
+
+
+
+<div class="post-detail-header" id="thumbnail_canvas" style="background-repeat: no-repeat; background-size: cover; 
+  background-position: center center;position: relative;background-image:url('https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp')">
+  <div class="post-detail-header-mask"></div>
+  <canvas id="header_canvas"style="position:absolute;bottom:0;pointer-events:none;"></canvas>
+  
+  <div class="post-detail-header_info-box">
+    <div class="title-box">
+      <span class="title">
+        数据库实现十磁盘存储引擎
+      </span>
     </div>
-    <div class="categories-header-desc">
     
-        <span class="title" id="categories-header-desc"></span>
-    <script>
-  function typedFn() {
-    const el = '#categories-header-desc';
-    const type = 'categories';
-    let desc = '愿你如风，被人温柔以待'
-    var typed = new Typed(el, {
-      strings: [desc],
-      startDelay: 100,
-      typeSpeed: 100,
-      loop: true,
-      backSpeed: 50,
-      showCursor: true
-    });
-  }
-  typedFn();
+    
+      
+        <span class="post-detail-header_date">
+          <i class="fas fa-calendar"></i> Published in：2024-11-16 |
+        </span>
+      
+
+      
+        <span class="post-detail-header_categories">
+          <i class="iconfont iconbookmark1"></i> category：
+          
+            <a href="/categories/rust%EF%BC%8C%E6%95%B0%E6%8D%AE%E5%BA%93/" class="post-detail-header_category">
+              rust，数据库
+            </a>
+          
+        </span>
+      
+
+      
+        <div class="post-detail-header_wordcount">
+          <span class="totalcount">
+            <i class="fas fa-file-text-o"></i> Words: 524 |
+          </span>
+  
+          <span class="min2read">
+            <i class="fas fa-clock"></i> Reading time: 1min |
+          </span>
+  
+          
+            <span class="reading">
+              <i class="fas fa-eye"></i> reading：<span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+        </div>
+      
+    
+  </div>
+  
+  
+    <script src="/js/bubble/bubble.js"></script>
+  
+</div>
+
+
+
+
+
+<div class="post-detail-content post-row" 
+  style="padding-top: 0px;">
+  <div class="main-content">
+    <article class="post post-detail">
+      <div class="post-content">
+        <h2 id="磁盘模型概述"><a href="#磁盘模型概述" class="headerlink" title="磁盘模型概述"></a>磁盘模型概述</h2><p>上一节我们完成了基于内存的存储引擎，但是内存中的数据，掉电之后就会丢失，无法完成持久化的操作，因此我们还是要实现一个基于磁盘的存储引擎，这样可以把数据都写入到磁盘中，即使掉电，数据也可以保存。<br>常见的磁盘存储模型有 LSM Tree,B+ Tree,Bitcask。</p>
+<h3 id="LSM-Tree"><a href="#LSM-Tree" class="headerlink" title="LSM Tree"></a>LSM Tree</h3><p>LSM Tree 会先将数据写入到内存的数据结构中，然后定期将内存中的数据批量写入到磁盘，形成不变的排序文件。当内存缓冲区满了之后，会将内存缓冲区写入磁盘并生成新的内存缓冲区。而且 LSM Tree 还会定期进行合并操作，将多个排序文件合并成一个，防止需要查找多个文件。</p>
+<p>优点：</p>
+<ul>
+<li>写性能高</li>
+<li>空间利用率高</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>都性能可能受影响</li>
+<li>合并多个排序文件成本高</li>
+</ul>
+<h3 id="B-Tree"><a href="#B-Tree" class="headerlink" title="B+ Tree"></a>B+ Tree</h3><p>B+ Tree 是一种平衡树结构，数据全部存储在叶子节点，路径上的节点只作为 key，并且是有序的。由于所有叶子节点高度一致，所以 B+ Tree 的读取性能稳定，但由于写入和删除操作可能会触发 Rebalance 操作，影响性能。</p>
+<p>优点：</p>
+<ul>
+<li>读性能高</li>
+<li>范围查询高效</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>写性能相对较低</li>
+<li>空间利用率较低</li>
+</ul>
+<h3 id="Bitcask"><a href="#Bitcask" class="headerlink" title="Bitcask"></a>Bitcask</h3><p>Bitcask 采用日志文件存储，所有的写操作到追加到日志文件末尾，读操作则通过内存中索引查找键对应值的位置来读取数据。Bitcask 也会定期进行数据压缩，移除无用的数据和重复的键。Bitcask 数据是无序的。</p>
+<p>优点：</p>
+<ul>
+<li>写性能高</li>
+<li>读性能高</li>
+<li>实现简单</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>内存消耗大</li>
+<li>不适合频繁更新</li>
+</ul>
+<p>这是几种磁盘的存储模型，各自有各自的优点和缺点，我们这里采用 Bitcask 来实现，主要是因为实现简单。下一节开始具体实现。</p>
+
+      </div>
+      <div class="post-tags-categories">
+        
+        <div class="tags">
+          
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="">
+              数据库
+            </a>
+          
+        </div>
+        
+      </div>
+      
+        <div class="copyright">
+  <ul class="post-copyright">
+    <li class="post-copyright-author">
+    <strong>author:  </strong>wanglufee</a>
+    </li>
+    <li class="post-copyright-link">
+    <strong>link:  </strong>
+    <a href="/2024/11/16/数据库实现十磁盘存储引擎/" target="_blank" title="数据库实现十磁盘存储引擎">http://wanglufee.github.io/2024/11/16/数据库实现十磁盘存储引擎/</a>
+    </li>
+    <li class="post-copyright-license">
+      <strong>Copyright notice:   </strong>
+      All articles on this website, unless otherwise stated, adopt <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">CC BY-NC-ND 4.0</a>
+      reprint policy. If reproduced, please indicate source!
+    </li>
+  </ul>
+<div>
+      
+    </article>
+    <!-- 上一篇文章和下一篇文章 -->
+    
+      <!-- 文章详情页的上一页和下一页 -->
+<div class="post-nav">
+
+
+
+  
+  <div class="post-nav-prev post-nav-item">
+    <div class="post-nav-img" style="background-size: cover; 
+      background-position: center center;">
+      <img class="lazyload lazyload placeholder" src="https://pic2.zhimg.com/80/v2-63bbdb5b76b8d349ad35ff4281efbd37_1440w.webp" class="lazyload placeholder" data-srcset="https://pic2.zhimg.com/80/v2-63bbdb5b76b8d349ad35ff4281efbd37_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+    </div>
+    <a href="/2024/12/07/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%8D%81%E4%B8%80Bitcask%E5%88%9D%E6%AD%A5%E5%AE%9A%E4%B9%89/" class="post-nav-link">
+      <div class="title">
+        <i class="fas fa-angle-left"></i> Prev:
+        <div class="title-text">数据库实现十一Bitcask初步定义</div>
+      </div>
+      
+      <!-- <div class="content">
+        磁盘模型定义首先来回顾一下 Bitcask ，它会将数据按照日志形式，逐条追加到文件末尾，并且生成一个键值关系存储在内存
+      </div> -->
+    </a>
+  </div>
+
+
+
+  
+  <div class="post-nav-next post-nav-item">
+    <div class="post-nav-img" style="background-size: cover; 
+      background-position: center center;">
+      <img class="lazyload lazyload placeholder" src="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" class="lazyload placeholder" data-srcset="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" src="" alt="">
+    </div>
+    <a href="/2024/11/02/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B9%9Dsql%E5%BC%95%E6%93%8E%E5%B1%82KV%E5%BC%95%E6%93%8E/" class="post-nav-link">
+      <div class="title">
+        Next: <i class="fas fa-angle-right"></i>
+        <div class="title-text">数据库实现九sql引擎层KV引擎</div>
+      </div>
+      <!-- <div class="content">
+        sql层KV引擎上一节我们实现了底层的基于内存的存储引擎，这一节我们来实现一个sql层的 KV 的引擎，它会以键值对的形
+      </div> -->
+    </a>
+  </div>
+
+</div>
+
+    
+    
+
+    <!-- 打赏 -->
+    
+      <div id="appDonate" class="post-donate">
+  <div id="donate_board" class="donate_bar center" ref="donate">
+    <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏" @click="showDialogDrawer()"></a>
+  </div>
+  <transition name="fade">
+    <div 
+      class="donate-box-mask"
+      v-cloak 
+      v-show="visible"
+      @click="cancelDialogDrawer()"
+    >
+    </div>
+  </transition>
+  <transition name="bounce">
+    <div class="donate-box" v-cloak v-show="visible">
+      <div class="donate-box_close">
+        <i class="fas fa-times" aria-hidden="true" @click="cancelDialogDrawer" pointer></i>
+      </div>
+      <div class="donate-box_title">
+        <h4>
+          你的赏识是我前进的动力
+        </h4>
+      </div>
+      <div class="donate-box_tab">
+        <div class="Alipay" pointer :class="{'active': tabActive === 'Alipay'}" @click="changeTabActive('Alipay')">
+          支付宝
+        </div>
+        <div class="WeChatpay" pointer :class="{'active': tabActive === 'WeChatpay'}" @click="changeTabActive('WeChatpay')">
+          微信
+        </div>
+      </div>
+      <div class="donate-box_img">
+        <div class="AlipayImg" v-show="tabActive === 'Alipay'">
+          <img src="/" class="lazyload placeholder" data-srcset="/" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="支付宝打赏" />
+        </div> 
+        <div class="WeChatpayImg" v-show="tabActive === 'WeChatpay'">
+          <img src="/" class="lazyload placeholder" data-srcset="/" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="微信打赏" />
+        </div>
+      </div>
+    </div>
+  </transition>
+</div>
+
+<script>
+  var body = document.body || document.documentElement || window;
+  var vm = new Vue({
+    el: '#appDonate',
+    data: {
+      visible: false,
+      tabActive: 'Alipay',
+      top: 0,
+    },
+    computed: {
+    },
+    mounted() {
+    },
+    methods: {
+      showDialogDrawer() {
+        this.visible = true;
+        // 防止页面滚动，只能让弹框滚动
+        // function getScroll() {
+        //   return {
+        //     left: window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft || 0,
+        //     top: window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
+        //   };
+        // }
+        this.top = $(document).scrollTop() // or getScroll().top
+        // console.log('aa', $('.main-content'));
+        body.style.cssText = 'overflow: hidden;';
+      },
+      cancelDialogDrawer() {
+        this.visible = false;
+        body.removeAttribute('style');
+        $(document).scrollTop(this.top)
+      },
+      changeTabActive(name) {
+        this.tabActive = name;
+      }
+    },
+    created() {}
+  })
 </script>
     
+
+    <!-- 分享 -->
+    
+      <!-- https://github.com/overtrue/share.js -->
+<!-- 文章详情页的分享 -->
+<div class="social-share" data-sites="qq,wechat" data-wechat-qrcode-helper="<p>微信扫一扫即可分享！</p>"></div>
+
+<script src="/js/shareJs/social-share.min.js"></script>
+</script>
+
+<style>
+  .social-share {
+    margin: 20px 0;
+  }
+</style>
+
+
+    
+    
+    <!-- 评论 -->
+    <!-- 评论 -->
+
+  <div id="myComment">
+    
+      <div id="gitment-container"></div>
+
+    
+  </div>
+
+<!-- comment script in themes\hexo-theme-bamboo\layout\_partial\scripts\index.ejs -->
+
+
+  </div>
+
+  <!-- 目录 -->
+  <aside id='l_side'>
+  
+    
+      <section class="widget side_blogger">
+  <div class='content'>
+    
+    
+      <div class='text'>
+        
+          <h2>人间客</h2>
+        
+        
+        
+          <p><span id="jinrishici-sentence">wanglufee</span></p>
+          <script src="https://sdk.jinrishici.com/v2/browser/jinrishici.js" charset="utf-8"></script>
+        
+      </div>
+    
+    
+      <div class="social-wrapper">
+        
+          
+            <a href="/2362487738@qq.com"
+              class="social fas fa-envelope flat-btn"
+              target="_blank"
+              rel="external nofollow noopener noreferrer">
+              
+            </a>
+          
+        
+          
+            <a href="https://github.com/wanglufee/"
+              class="social fab fa-github flat-btn"
+              target="_blank"
+              rel="external nofollow noopener noreferrer">
+              
+            </a>
+          
+        
+      </div>
+    
+  </div>
+</section>
+
+    
+  
+  
+  
+
+  <div class="layout_sticky">    
+    
+      
+<section class="widget side_toc">
+  
+  <header>
+    
+      <i style="color: " class="fas fa-list fa-fw" aria-hidden="true"></i><span class='name' style="color: ">本文目录</span>
+    
+  </header>
+
+
+  <div class='content'>
+    <div class="toc-main">
+      <div class="toc-content">
+        <!-- <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A3%81%E7%9B%98%E6%A8%A1%E5%9E%8B%E6%A6%82%E8%BF%B0"><span class="toc-text">磁盘模型概述</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#LSM-Tree"><span class="toc-text">LSM Tree</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#B-Tree"><span class="toc-text">B+ Tree</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Bitcask"><span class="toc-text">Bitcask</span></a></li></ol></li></ol> -->
+        <div class="toc"></div>
+      </div>
     </div>
-    <div class="mask-box"></div>
+  </div>
+</section>
+<!-- 手机端目录按钮 -->
+<div id="toc-mobile-btn">
+  <i class="fas fa-list-ul" aria-hidden="true"></i>
 </div>
 
+      
+  <section class="widget side_recent_post">
+    
+  <header>
+    
+      <a style="color: " href='/tags/'><i class="fas fa-book fa-fw" aria-hidden="true"></i><span class='name'>最新文章</span></a>
+    
+  </header>
 
 
-<div id="categories" class="container">
-    <div class="card">
-        <div class="card-content">
-            <div class="category-title center-align">
-                <i class="fas fa-tags"></i>&nbsp;&nbsp;Article Categories
+    <div class='content'>
+      
+      <!-- hash算法 -->
+      
+      <div class="aside-list">
+        
+          <div class="aside-list-item">
+            
+            
+            
+
+            <div class="post-img-box">
+              <a href="/2024/12/07/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%8D%81%E4%B8%80Bitcask%E5%88%9D%E6%AD%A5%E5%AE%9A%E4%B9%89/" class="post-img " style="background-size: cover; 
+                background-position: center center;">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://pic2.zhimg.com/80/v2-63bbdb5b76b8d349ad35ff4281efbd37_1440w.webp" class="lazyload placeholder" data-srcset="https://pic2.zhimg.com/80/v2-63bbdb5b76b8d349ad35ff4281efbd37_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+              </a>
             </div>
-            <div class="category-chips">
+            <div class="post-date-title">
+              <div>
                 
+                  <span class="post-date">12-07</span>
                 
-                <a href="/categories/%E6%80%BB%E7%BB%93/" title="总结: 1">
-                    <span class="category-content"
-                        title="总结" style="background-color: #82E0AA;">总结
-                        <span class="category-length">1</span>
-                    </span>
-                </a>
-                
-                
-                <a href="/categories/rust/" title="rust: 2">
-                    <span class="category-content"
-                        title="rust" style="background-color: #FEF9E7;">rust
-                        <span class="category-length">2</span>
-                    </span>
-                </a>
-                
-                
-                <a href="/categories/linux/" title="linux: 3">
-                    <span class="category-content"
-                        title="linux" style="background-color: #85C1E9;">linux
-                        <span class="category-length">3</span>
-                    </span>
-                </a>
-                
-                
-                <a href="/categories/rust%EF%BC%8C%E6%95%B0%E6%8D%AE%E5%BA%93/" title="rust，数据库: 11">
-                    <span class="category-content"
-                        title="rust，数据库" style="background-color: #D7BDE2;">rust，数据库
-                        <span class="category-length">11</span>
-                    </span>
-                </a>
-                
+              </div>
+              <a class="post-title" href="/2024/12/07/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%8D%81%E4%B8%80Bitcask%E5%88%9D%E6%AD%A5%E5%AE%9A%E4%B9%89/">数据库实现十一Bitcask初步定义</a>
             </div>
-        </div>
+          </div>
+        
+          <div class="aside-list-item">
+            
+            
+            
+
+            <div class="post-img-box">
+              <a href="/2024/11/16/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%8D%81%E7%A3%81%E7%9B%98%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" class="post-img " style="background-size: cover; 
+                background-position: center center;">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" class="lazyload placeholder" data-srcset="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+              </a>
+            </div>
+            <div class="post-date-title">
+              <div>
+                
+                  <span class="post-date">11-16</span>
+                
+              </div>
+              <a class="post-title" href="/2024/11/16/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%8D%81%E7%A3%81%E7%9B%98%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">数据库实现十磁盘存储引擎</a>
+            </div>
+          </div>
+        
+          <div class="aside-list-item">
+            
+            
+            
+
+            <div class="post-img-box">
+              <a href="/2024/11/02/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B9%9Dsql%E5%BC%95%E6%93%8E%E5%B1%82KV%E5%BC%95%E6%93%8E/" class="post-img " style="background-size: cover; 
+                background-position: center center;">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" class="lazyload placeholder" data-srcset="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+              </a>
+            </div>
+            <div class="post-date-title">
+              <div>
+                
+                  <span class="post-date">11-02</span>
+                
+              </div>
+              <a class="post-title" href="/2024/11/02/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B9%9Dsql%E5%BC%95%E6%93%8E%E5%B1%82KV%E5%BC%95%E6%93%8E/">数据库实现九sql引擎层KV引擎</a>
+            </div>
+          </div>
+        
+          <div class="aside-list-item">
+            
+            
+            
+
+            <div class="post-img-box">
+              <a href="/2024/10/19/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%85%AB%E5%9F%BA%E4%BA%8E%E5%86%85%E5%AD%98%E7%9A%84%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" class="post-img " style="background-size: cover; 
+                background-position: center center;">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://picx.zhimg.com/80/v2-b44931ea513e5f7b3b06f2703f79653c_1440w.webp" class="lazyload placeholder" data-srcset="https://picx.zhimg.com/80/v2-b44931ea513e5f7b3b06f2703f79653c_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+              </a>
+            </div>
+            <div class="post-date-title">
+              <div>
+                
+                  <span class="post-date">10-19</span>
+                
+              </div>
+              <a class="post-title" href="/2024/10/19/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%85%AB%E5%9F%BA%E4%BA%8E%E5%86%85%E5%AD%98%E7%9A%84%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">数据库实现八基于内存的存储引擎</a>
+            </div>
+          </div>
+        
+          <div class="aside-list-item">
+            
+            
+            
+
+            <div class="post-img-box">
+              <a href="/2024/10/02/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B8%83%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" class="post-img " style="background-size: cover; 
+                background-position: center center;">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://pic4.zhimg.com/80/v2-83ea273b88e119d9615aed0d89aad4ab_1440w.webp" class="lazyload placeholder" data-srcset="https://pic4.zhimg.com/80/v2-83ea273b88e119d9615aed0d89aad4ab_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+              </a>
+            </div>
+            <div class="post-date-title">
+              <div>
+                
+                  <span class="post-date">10-02</span>
+                
+              </div>
+              <a class="post-title" href="/2024/10/02/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B8%83%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">数据库实现七存储引擎</a>
+            </div>
+          </div>
+        
+      </div>
     </div>
+  </section>
+
+    
+  </div>
+</aside>
+
+  <!-- 图片放大 Wrap images with fancybox support -->
+  <script src="/js/wrapImage.js"></script>
 </div>
+
+<!-- 文章详情页背景图 -->
+<div id="appBgSwiper" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -2;"
+	:style="{'background-color': bgColor ? bgColor : 'transparent'}">
+	<transition-group tag="ul" :name="names">
+		<li v-for='(image,index) in img' :key='index' v-show="index === mark" class="bg-swiper-box">
+			<img :src="image" class="bg-swiper-img no-lazy">
+		</li>
+	</transition-group>
+</div>
+<script>
+	var vm = new Vue({
+		el: '#appBgSwiper',
+		data: {
+			names: '' || 'fade' || 'fade', // translate-fade fade
+			mark: 0,
+			img: [],
+			bgColor: '',
+			time: null
+		},
+		methods: {   //添加方法
+			change(i, m) {
+				if (i > m) {
+					// this.names = 'fade';
+				} else if (i < m) {
+					// this.names = 'fade';
+				} else {
+					return;
+				}
+				this.mark = i;
+			},
+			prev() {
+				// this.names = 'fade';
+				this.mark--;
+				if (this.mark === -1) {
+					this.mark = 3;
+					return
+				}
+			},
+			next() {
+				// this.names = 'fade';
+				this.mark++;
+				if (this.mark === this.img.length) {
+					this.mark = 0;
+					return
+				}
+			},
+			autoPlay() {
+				// this.names = 'fade';
+				this.mark++;
+				if (this.mark === this.img.length) {
+					this.mark = 0;
+					return
+				}
+			},
+			play() {
+				let bgImgDelay = '' || '180000'
+				let delay = parseInt(bgImgDelay) || 180000;
+				this.time = setInterval(this.autoPlay, delay);
+			},
+			enter() {
+				clearInterval(this.time);
+			},
+			leave() {
+				this.play();
+			}
+		},
+		created() {
+			this.play()
+		},
+		beforeDestroy() {
+			clearInterval(this.time);
+		},
+		mounted() {
+			let prop = '' || '';
+			let isImg = prop.includes('.bmp') || prop.includes('.jpg') || prop.includes('.png') || prop.includes('.tif') || prop.includes('.gif') || prop.includes('.pcx') || prop.includes('.tga') || prop.includes('.exif') || prop.includes('.fpx') || prop.includes('.psd') || prop.includes('.cdr') || prop.includes('.pcd') || prop.includes('.dxf') || prop.includes('.ufo') || prop.includes('.eps') || prop.includes('.ai') || prop.includes('.raw') || prop.includes('.WMF') || prop.includes('.webp') || prop.includes('.jpeg') || prop.includes('http://') || prop.includes('https://')
+			if (isImg) {
+				let img = prop.split(',');
+				let configRoot = '/'
+				let arrImg = [];
+				img.forEach(el => {
+					var Expression = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/;
+					var objExp = new RegExp(Expression);
+
+					if (objExp.test(el)) {
+						// http or https
+						arrImg.push(el);
+					} else {
+						// 非http or https开头
+						// 本地文件
+						let firstStr = el.charAt(0);
+						if (firstStr == '/') {
+							el = el.substr(1); // 删除第一个字符 '/',因为 configRoot最后一个字符为 /
+						}
+						el = configRoot + el;
+						arrImg.push(el);
+					}
+				})
+				this.img = arrImg;
+			} else {
+				this.bgColor = prop;
+			}
+		}
+	})
+</script>
+
+<style>
+	.bg-swiper-box {
+		position: absolute;
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	.bg-swiper-img {
+		object-fit: cover;
+		width: 100%;
+		height: 100%;
+	}
+</style>
+
+
+
+
+  <script>
+  function loadMermaid() {
+    if (document.getElementsByClassName('mermaid').length) {
+      if (window.mermaidJsLoad) mermaid.init()
+      else {
+        loadScript('https://unpkg.com/mermaid/dist/mermaid.min.js').then(() => {
+          window.mermaidJsLoad = true
+          mermaid.initialize({
+            theme: 'default',
+          })
+          if ('true') {
+            mermaid.init();
+          }
+        })
+      }
+    }
+  };
+  document.addEventListener("DOMContentLoaded", function () {
+    loadMermaid();
+  })
+
+  document.addEventListener('pjax:complete', function () {
+    loadMermaid();
+  })
+  
+</script>
+
 
       </main>
     </div>

@@ -11,7 +11,7 @@
   <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-  <title>Categories | wanglufee</title>
+  <title>数据库实现十一Bitcask初步定义 | wanglufee</title>
 
   <link rel="icon" type="image/jpeg" href="/OIP-C.jpg">
   <link rel="stylesheet" href="https://at.alicdn.com/t/font_1911880_c1nvbyezg17.css">
@@ -459,83 +459,649 @@
 </header>
         <!-- 内容区域 -->
         
-<div class="bg-dark-floor" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -2;"></div>
-<div class="bg-light-floor-categories" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -3;"></div>
+ <!-- prismjs 代码高亮 -->
+ 
 
-<div class="categories-header" style="background-image:url('https://pic2.zhimg.com/80/v2-7c496c95897fb15768593cc5170c8b1a_1440w.jpg?source=1940ef5c')">
-    <div class="categories-header-title">
-        categories
+
+<div class="bg-dark-floor" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -1;"></div>
+
+
+  <!-- 文章详情页顶部图片和标题 -->
+
+
+
+
+<div class="post-detail-header" id="thumbnail_canvas" style="background-repeat: no-repeat; background-size: cover; 
+  background-position: center center;position: relative;background-image:url('https://pic2.zhimg.com/80/v2-63bbdb5b76b8d349ad35ff4281efbd37_1440w.webp')">
+  <div class="post-detail-header-mask"></div>
+  <canvas id="header_canvas"style="position:absolute;bottom:0;pointer-events:none;"></canvas>
+  
+  <div class="post-detail-header_info-box">
+    <div class="title-box">
+      <span class="title">
+        数据库实现十一Bitcask初步定义
+      </span>
     </div>
-    <div class="categories-header-desc">
     
-        <span class="title" id="categories-header-desc"></span>
-    <script>
-  function typedFn() {
-    const el = '#categories-header-desc';
-    const type = 'categories';
-    let desc = '愿你如风，被人温柔以待'
-    var typed = new Typed(el, {
-      strings: [desc],
-      startDelay: 100,
-      typeSpeed: 100,
-      loop: true,
-      backSpeed: 50,
-      showCursor: true
-    });
-  }
-  typedFn();
+    
+      
+        <span class="post-detail-header_date">
+          <i class="fas fa-calendar"></i> Published in：2024-12-07 |
+        </span>
+      
+
+      
+        <span class="post-detail-header_categories">
+          <i class="iconfont iconbookmark1"></i> category：
+          
+            <a href="/categories/rust%EF%BC%8C%E6%95%B0%E6%8D%AE%E5%BA%93/" class="post-detail-header_category">
+              rust，数据库
+            </a>
+          
+        </span>
+      
+
+      
+        <div class="post-detail-header_wordcount">
+          <span class="totalcount">
+            <i class="fas fa-file-text-o"></i> Words: 1.1k |
+          </span>
+  
+          <span class="min2read">
+            <i class="fas fa-clock"></i> Reading time: 4min |
+          </span>
+  
+          
+            <span class="reading">
+              <i class="fas fa-eye"></i> reading：<span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+        </div>
+      
+    
+  </div>
+  
+  
+    <script src="/js/bubble/bubble.js"></script>
+  
+</div>
+
+
+
+
+
+<div class="post-detail-content post-row" 
+  style="padding-top: 0px;">
+  <div class="main-content">
+    <article class="post post-detail">
+      <div class="post-content">
+        <h2 id="磁盘模型定义"><a href="#磁盘模型定义" class="headerlink" title="磁盘模型定义"></a>磁盘模型定义</h2><p>首先来回顾一下 Bitcask ，它会将数据按照日志形式，逐条追加到文件末尾，并且生成一个键值关系存储在内存中，这个键值关系保存了键和对应数据在磁盘中位置的关系，当需要索引是，通过内存索引出对应的数据在磁盘上的位置，直接进行读取。</p>
+<p>那么我们在磁盘上存储的数据条目需要有一个结构，这里一个条目中我们保存了 <strong>键的长度，值的长度，键的内容，值的内容</strong>，非常简单，并且前两个我们使用定长的数据字段，每个占据4个字节。总体如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">|----------|----------|---------------|----------------|</span><br><span class="line">| 键长     |  值长     |  键           |       值       |</span><br><span class="line">|    4字节 |  4字节    |</span><br></pre></td></tr></table></figure>
+<p>这就是我们在磁盘中保存的数据条目，而内存中的索引关系我们使用 BTreeMap 来存储。</p>
+<blockquote>
+<p>set操作</p>
+</blockquote>
+<p>set 操作我们需要在磁盘文件中追加一条条目，并且在内存中生成对应的索引。</p>
+<blockquote>
+<p>get操作</p>
+</blockquote>
+<p>get操作我们先根据键拿到数据在磁盘中的位置，然后直接读取数据即可。</p>
+<blockquote>
+<p>delete操作</p>
+</blockquote>
+<p>delete操作我们先将value长度设置为-1，表示是一个删除的值，之后在重启时，将其删除即可。</p>
+<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2><p>之前是有定义一个存储引擎的 trait 的，我们的磁盘的存储引擎也需要实现那个 trait即可。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> <span class="title class_">KeyDir</span> = BTreeMap&lt;<span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;, (<span class="type">u64</span>,<span class="type">u32</span>)&gt;;</span><br><span class="line"><span class="comment">// 磁盘存储引擎</span></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">DiskEngine</span>&#123;</span><br><span class="line">    keydir: KeyDir,</span><br><span class="line">    log: Log,</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">pub</span> <span class="keyword">struct</span> <span class="title class_">Log</span> &#123;</span><br><span class="line">    file: std::fs::File</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里使用 Log 结构体来对磁盘进行操作，而 KeyDir 类型则是我们在内存中的索引。</p>
+<p>为存储引擎的结构体实现 trait：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> <span class="title class_">super</span>::engine::Engine <span class="keyword">for</span> <span class="title class_">DiskEngine</span> &#123;</span><br><span class="line">    <span class="keyword">type</span> <span class="title class_">EngineIterator</span>&lt;<span class="symbol">&#x27;a</span>&gt; = DiskEngineIterator;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">set</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, key: <span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;, value: <span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;()&gt; &#123;</span><br><span class="line">        <span class="comment">// 先写日志</span></span><br><span class="line">        <span class="keyword">let</span> (offset,size) = <span class="keyword">self</span>.log.<span class="title function_ invoke__">write_entry</span>(&amp;key, <span class="title function_ invoke__">Some</span>(&amp;value))?;</span><br><span class="line">        <span class="comment">// 更新内存索引</span></span><br><span class="line">        <span class="comment">// 100----------------|-----150</span></span><br><span class="line">        <span class="comment">//                   130</span></span><br><span class="line">        <span class="comment">// val size = 20</span></span><br><span class="line">        <span class="keyword">let</span> <span class="variable">val_size</span> = value.<span class="title function_ invoke__">len</span>() <span class="keyword">as</span> <span class="type">u32</span>;</span><br><span class="line">        <span class="comment">// 条目中存入 value 在文件中的偏移以及 value 的长度</span></span><br><span class="line">        <span class="keyword">self</span>.keydir.<span class="title function_ invoke__">insert</span>(key, (offset + size <span class="keyword">as</span> <span class="type">u64</span> - val_size <span class="keyword">as</span> <span class="type">u64</span>, val_size));</span><br><span class="line">        <span class="title function_ invoke__">Ok</span>(())</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">get</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, key: <span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;<span class="type">Option</span>&lt;<span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;&gt;&gt; &#123;</span><br><span class="line">        <span class="keyword">match</span> <span class="keyword">self</span>.keydir.<span class="title function_ invoke__">get</span>(&amp;key) &#123;</span><br><span class="line">            <span class="title function_ invoke__">Some</span>((offset,val_size)) =&gt; &#123;</span><br><span class="line">                <span class="keyword">let</span> <span class="variable">val</span> = <span class="keyword">self</span>.log.<span class="title function_ invoke__">read_value</span>(*offset, *val_size)?;</span><br><span class="line">                <span class="title function_ invoke__">Ok</span>(<span class="title function_ invoke__">Some</span>(val))</span><br><span class="line">            &#125;,</span><br><span class="line">            <span class="literal">None</span> =&gt; <span class="title function_ invoke__">Ok</span>(<span class="literal">None</span>)</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">delete</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, key: <span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;()&gt; &#123;</span><br><span class="line">        <span class="comment">// 删除则写入None 并且从 keydir 中删除key条目</span></span><br><span class="line">        <span class="keyword">self</span>.log.<span class="title function_ invoke__">write_entry</span>(&amp;key, <span class="literal">None</span>)?;</span><br><span class="line">        <span class="keyword">self</span>.keydir.<span class="title function_ invoke__">remove</span>(&amp;key);</span><br><span class="line">        <span class="title function_ invoke__">Ok</span>(())</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">scan</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>, range: <span class="keyword">impl</span> <span class="title class_">std</span>::ops::RangeBounds&lt;<span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;&gt;) <span class="punctuation">-&gt;</span> <span class="keyword">Self</span>::EngineIterator&lt;<span class="symbol">&#x27;_</span>&gt; &#123;</span><br><span class="line">        todo!()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里的 set 方法我们先将数据写入文件，并获取到条目的偏移以及长度。之后将键以及偏移插入到 KeyDir 中。 get 方法则通过查询数据在文件中的偏移，去读取数据。 delete 将数据内容置为空，并且从 KeyDir中删除对应的键值。</p>
+<p>接下来是操作文件的 Log 的实现</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">impl</span> <span class="title class_">Log</span> &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">write_entry</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>,key: &amp;<span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;, value: <span class="type">Option</span>&lt;&amp;<span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;&gt;) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;(<span class="type">u64</span>,<span class="type">u32</span>)&gt; &#123;</span><br><span class="line">        <span class="comment">// 定位到文件末尾</span></span><br><span class="line">        <span class="keyword">let</span> <span class="variable">offset</span> = <span class="keyword">self</span>.file.<span class="title function_ invoke__">seek</span>(SeekFrom::<span class="title function_ invoke__">End</span>(<span class="number">0</span>))?;</span><br><span class="line">        <span class="comment">// 计算长度</span></span><br><span class="line">        <span class="keyword">let</span> <span class="variable">key_size</span> = key.<span class="title function_ invoke__">len</span>() <span class="keyword">as</span> <span class="type">u32</span>;</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">val_size</span> = value.<span class="title function_ invoke__">map_or</span>(<span class="number">0</span>, |v| v.<span class="title function_ invoke__">len</span>() <span class="keyword">as</span> <span class="type">u32</span>);</span><br><span class="line">        <span class="keyword">let</span> <span class="variable">total_size</span> = key_size + val_size + LOG_HEAD_SIZE;</span><br><span class="line">        <span class="comment">// 拿到写入缓存</span></span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">writer</span> = BufWriter::<span class="title function_ invoke__">with_capacity</span>(total_size <span class="keyword">as</span> <span class="type">usize</span>, &amp;<span class="keyword">self</span>.file);</span><br><span class="line">        writer.<span class="title function_ invoke__">write_all</span>(&amp;key_size.<span class="title function_ invoke__">to_be_bytes</span>())?;</span><br><span class="line">        writer.<span class="title function_ invoke__">write_all</span>(&amp;value.<span class="title function_ invoke__">map_or</span>(-<span class="number">1</span>, |v| v.<span class="title function_ invoke__">len</span>() <span class="keyword">as</span> <span class="type">i32</span>).<span class="title function_ invoke__">to_be_bytes</span>())?;</span><br><span class="line">        writer.<span class="title function_ invoke__">write_all</span>(&amp;key)?;</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">let</span> <span class="variable">Some</span>(v) = value &#123;</span><br><span class="line">            writer.<span class="title function_ invoke__">write_all</span>(&amp;v)?;</span><br><span class="line">        &#125;</span><br><span class="line">        writer.<span class="title function_ invoke__">flush</span>();</span><br><span class="line">        <span class="comment">// 返回相对应文件的偏移，和写入的总长度。</span></span><br><span class="line">        <span class="title function_ invoke__">Ok</span>((offset, total_size))</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">fn</span> <span class="title function_">read_value</span>(&amp;<span class="keyword">mut</span> <span class="keyword">self</span>,offset: <span class="type">u64</span>, val_size: <span class="type">u32</span>) <span class="punctuation">-&gt;</span> <span class="type">Result</span>&lt;<span class="type">Vec</span>&lt;<span class="type">u8</span>&gt;&gt; &#123;</span><br><span class="line">        <span class="comment">// 定位到 value 所在位置</span></span><br><span class="line">        <span class="keyword">self</span>.file.<span class="title function_ invoke__">seek</span>(SeekFrom::<span class="title function_ invoke__">Start</span>(offset))?;</span><br><span class="line">        <span class="comment">// 定义存储 value 的 buf</span></span><br><span class="line">        <span class="keyword">let</span> <span class="keyword">mut </span><span class="variable">buf</span> = <span class="built_in">vec!</span>[<span class="number">0</span>;val_size <span class="keyword">as</span> <span class="type">usize</span>];</span><br><span class="line">        <span class="keyword">self</span>.file.<span class="title function_ invoke__">read_exact</span>(&amp;<span class="keyword">mut</span> buf)?;</span><br><span class="line">        <span class="title function_ invoke__">Ok</span>(buf)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Log 目前提供了两个操作，一个写，一个读，在写的过程中我们要判断数据是否为 None ，如果为 None 那么说明这是一个删除操作，我们需要将文件中对应的值长度写为 -1，以此来表名数据无效。</p>
+<p>这就是存储引擎的基本的方法，之后我们会实现存储引擎的启动和清理过程。</p>
+
+      </div>
+      <div class="post-tags-categories">
+        
+        <div class="tags">
+          
+            <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="">
+              数据库
+            </a>
+          
+        </div>
+        
+      </div>
+      
+        <div class="copyright">
+  <ul class="post-copyright">
+    <li class="post-copyright-author">
+    <strong>author:  </strong>wanglufee</a>
+    </li>
+    <li class="post-copyright-link">
+    <strong>link:  </strong>
+    <a href="/2024/12/07/数据库实现十一Bitcask初步定义/" target="_blank" title="数据库实现十一Bitcask初步定义">http://wanglufee.github.io/2024/12/07/数据库实现十一Bitcask初步定义/</a>
+    </li>
+    <li class="post-copyright-license">
+      <strong>Copyright notice:   </strong>
+      All articles on this website, unless otherwise stated, adopt <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">CC BY-NC-ND 4.0</a>
+      reprint policy. If reproduced, please indicate source!
+    </li>
+  </ul>
+<div>
+      
+    </article>
+    <!-- 上一篇文章和下一篇文章 -->
+    
+      <!-- 文章详情页的上一页和下一页 -->
+<div class="post-nav">
+
+
+
+
+
+  
+  <div class="post-nav-next post-nav-item">
+    <div class="post-nav-img" style="background-size: cover; 
+      background-position: center center;">
+      <img class="lazyload lazyload placeholder" src="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" class="lazyload placeholder" data-srcset="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" src="" alt="">
+    </div>
+    <a href="/2024/11/16/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%8D%81%E7%A3%81%E7%9B%98%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" class="post-nav-link">
+      <div class="title">
+        Next: <i class="fas fa-angle-right"></i>
+        <div class="title-text">数据库实现十磁盘存储引擎</div>
+      </div>
+      <!-- <div class="content">
+        磁盘模型概述上一节我们完成了基于内存的存储引擎，但是内存中的数据，掉电之后就会丢失，无法完成持久化的操作，因此我们还是要
+      </div> -->
+    </a>
+  </div>
+
+</div>
+
+    
+    
+
+    <!-- 打赏 -->
+    
+      <div id="appDonate" class="post-donate">
+  <div id="donate_board" class="donate_bar center" ref="donate">
+    <a id="btn_donate" class="btn_donate" href="javascript:;" title="打赏" @click="showDialogDrawer()"></a>
+  </div>
+  <transition name="fade">
+    <div 
+      class="donate-box-mask"
+      v-cloak 
+      v-show="visible"
+      @click="cancelDialogDrawer()"
+    >
+    </div>
+  </transition>
+  <transition name="bounce">
+    <div class="donate-box" v-cloak v-show="visible">
+      <div class="donate-box_close">
+        <i class="fas fa-times" aria-hidden="true" @click="cancelDialogDrawer" pointer></i>
+      </div>
+      <div class="donate-box_title">
+        <h4>
+          你的赏识是我前进的动力
+        </h4>
+      </div>
+      <div class="donate-box_tab">
+        <div class="Alipay" pointer :class="{'active': tabActive === 'Alipay'}" @click="changeTabActive('Alipay')">
+          支付宝
+        </div>
+        <div class="WeChatpay" pointer :class="{'active': tabActive === 'WeChatpay'}" @click="changeTabActive('WeChatpay')">
+          微信
+        </div>
+      </div>
+      <div class="donate-box_img">
+        <div class="AlipayImg" v-show="tabActive === 'Alipay'">
+          <img src="/" class="lazyload placeholder" data-srcset="/" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="支付宝打赏" />
+        </div> 
+        <div class="WeChatpayImg" v-show="tabActive === 'WeChatpay'">
+          <img src="/" class="lazyload placeholder" data-srcset="/" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="微信打赏" />
+        </div>
+      </div>
+    </div>
+  </transition>
+</div>
+
+<script>
+  var body = document.body || document.documentElement || window;
+  var vm = new Vue({
+    el: '#appDonate',
+    data: {
+      visible: false,
+      tabActive: 'Alipay',
+      top: 0,
+    },
+    computed: {
+    },
+    mounted() {
+    },
+    methods: {
+      showDialogDrawer() {
+        this.visible = true;
+        // 防止页面滚动，只能让弹框滚动
+        // function getScroll() {
+        //   return {
+        //     left: window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft || 0,
+        //     top: window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
+        //   };
+        // }
+        this.top = $(document).scrollTop() // or getScroll().top
+        // console.log('aa', $('.main-content'));
+        body.style.cssText = 'overflow: hidden;';
+      },
+      cancelDialogDrawer() {
+        this.visible = false;
+        body.removeAttribute('style');
+        $(document).scrollTop(this.top)
+      },
+      changeTabActive(name) {
+        this.tabActive = name;
+      }
+    },
+    created() {}
+  })
 </script>
     
+
+    <!-- 分享 -->
+    
+      <!-- https://github.com/overtrue/share.js -->
+<!-- 文章详情页的分享 -->
+<div class="social-share" data-sites="qq,wechat" data-wechat-qrcode-helper="<p>微信扫一扫即可分享！</p>"></div>
+
+<script src="/js/shareJs/social-share.min.js"></script>
+</script>
+
+<style>
+  .social-share {
+    margin: 20px 0;
+  }
+</style>
+
+
+    
+    
+    <!-- 评论 -->
+    <!-- 评论 -->
+
+  <div id="myComment">
+    
+      <div id="gitment-container"></div>
+
+    
+  </div>
+
+<!-- comment script in themes\hexo-theme-bamboo\layout\_partial\scripts\index.ejs -->
+
+
+  </div>
+
+  <!-- 目录 -->
+  <aside id='l_side'>
+  
+    
+      <section class="widget side_blogger">
+  <div class='content'>
+    
+    
+      <div class='text'>
+        
+          <h2>人间客</h2>
+        
+        
+        
+          <p><span id="jinrishici-sentence">wanglufee</span></p>
+          <script src="https://sdk.jinrishici.com/v2/browser/jinrishici.js" charset="utf-8"></script>
+        
+      </div>
+    
+    
+      <div class="social-wrapper">
+        
+          
+            <a href="/2362487738@qq.com"
+              class="social fas fa-envelope flat-btn"
+              target="_blank"
+              rel="external nofollow noopener noreferrer">
+              
+            </a>
+          
+        
+          
+            <a href="https://github.com/wanglufee/"
+              class="social fab fa-github flat-btn"
+              target="_blank"
+              rel="external nofollow noopener noreferrer">
+              
+            </a>
+          
+        
+      </div>
+    
+  </div>
+</section>
+
+    
+  
+  
+  
+
+  <div class="layout_sticky">    
+    
+      
+<section class="widget side_toc">
+  
+  <header>
+    
+      <i style="color: " class="fas fa-list fa-fw" aria-hidden="true"></i><span class='name' style="color: ">本文目录</span>
+    
+  </header>
+
+
+  <div class='content'>
+    <div class="toc-main">
+      <div class="toc-content">
+        <!-- <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%A3%81%E7%9B%98%E6%A8%A1%E5%9E%8B%E5%AE%9A%E4%B9%89"><span class="toc-text">磁盘模型定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%9E%E7%8E%B0"><span class="toc-text">实现</span></a></li></ol> -->
+        <div class="toc"></div>
+      </div>
     </div>
-    <div class="mask-box"></div>
+  </div>
+</section>
+<!-- 手机端目录按钮 -->
+<div id="toc-mobile-btn">
+  <i class="fas fa-list-ul" aria-hidden="true"></i>
 </div>
 
+      
+  <section class="widget side_recent_post">
+    
+  <header>
+    
+      <a style="color: " href='/tags/'><i class="fas fa-book fa-fw" aria-hidden="true"></i><span class='name'>最新文章</span></a>
+    
+  </header>
 
 
-<div id="categories" class="container">
-    <div class="card">
-        <div class="card-content">
-            <div class="category-title center-align">
-                <i class="fas fa-tags"></i>&nbsp;&nbsp;Article Categories
+    <div class='content'>
+      
+      <!-- hash算法 -->
+      
+      <div class="aside-list">
+        
+          <div class="aside-list-item">
+            
+            
+            
+
+            <div class="post-img-box">
+              <a href="/2024/12/07/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%8D%81%E4%B8%80Bitcask%E5%88%9D%E6%AD%A5%E5%AE%9A%E4%B9%89/" class="post-img " style="background-size: cover; 
+                background-position: center center;">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://pic2.zhimg.com/80/v2-63bbdb5b76b8d349ad35ff4281efbd37_1440w.webp" class="lazyload placeholder" data-srcset="https://pic2.zhimg.com/80/v2-63bbdb5b76b8d349ad35ff4281efbd37_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+              </a>
             </div>
-            <div class="category-chips">
+            <div class="post-date-title">
+              <div>
                 
+                  <span class="post-date">12-07</span>
                 
-                <a href="/categories/%E6%80%BB%E7%BB%93/" title="总结: 1">
-                    <span class="category-content"
-                        title="总结" style="background-color: #82E0AA;">总结
-                        <span class="category-length">1</span>
-                    </span>
-                </a>
-                
-                
-                <a href="/categories/rust/" title="rust: 2">
-                    <span class="category-content"
-                        title="rust" style="background-color: #FEF9E7;">rust
-                        <span class="category-length">2</span>
-                    </span>
-                </a>
-                
-                
-                <a href="/categories/linux/" title="linux: 3">
-                    <span class="category-content"
-                        title="linux" style="background-color: #85C1E9;">linux
-                        <span class="category-length">3</span>
-                    </span>
-                </a>
-                
-                
-                <a href="/categories/rust%EF%BC%8C%E6%95%B0%E6%8D%AE%E5%BA%93/" title="rust，数据库: 11">
-                    <span class="category-content"
-                        title="rust，数据库" style="background-color: #D7BDE2;">rust，数据库
-                        <span class="category-length">11</span>
-                    </span>
-                </a>
-                
+              </div>
+              <a class="post-title" href="/2024/12/07/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%8D%81%E4%B8%80Bitcask%E5%88%9D%E6%AD%A5%E5%AE%9A%E4%B9%89/">数据库实现十一Bitcask初步定义</a>
             </div>
-        </div>
+          </div>
+        
+          <div class="aside-list-item">
+            
+            
+            
+
+            <div class="post-img-box">
+              <a href="/2024/11/16/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%8D%81%E7%A3%81%E7%9B%98%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" class="post-img " style="background-size: cover; 
+                background-position: center center;">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" class="lazyload placeholder" data-srcset="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+              </a>
+            </div>
+            <div class="post-date-title">
+              <div>
+                
+                  <span class="post-date">11-16</span>
+                
+              </div>
+              <a class="post-title" href="/2024/11/16/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%8D%81%E7%A3%81%E7%9B%98%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">数据库实现十磁盘存储引擎</a>
+            </div>
+          </div>
+        
+          <div class="aside-list-item">
+            
+            
+            
+
+            <div class="post-img-box">
+              <a href="/2024/11/02/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B9%9Dsql%E5%BC%95%E6%93%8E%E5%B1%82KV%E5%BC%95%E6%93%8E/" class="post-img " style="background-size: cover; 
+                background-position: center center;">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" class="lazyload placeholder" data-srcset="https://pic3.zhimg.com/80/v2-5f7cb7e900b9dcf5354c3d4d2c5cc3c2_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+              </a>
+            </div>
+            <div class="post-date-title">
+              <div>
+                
+                  <span class="post-date">11-02</span>
+                
+              </div>
+              <a class="post-title" href="/2024/11/02/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B9%9Dsql%E5%BC%95%E6%93%8E%E5%B1%82KV%E5%BC%95%E6%93%8E/">数据库实现九sql引擎层KV引擎</a>
+            </div>
+          </div>
+        
+          <div class="aside-list-item">
+            
+            
+            
+
+            <div class="post-img-box">
+              <a href="/2024/10/19/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%85%AB%E5%9F%BA%E4%BA%8E%E5%86%85%E5%AD%98%E7%9A%84%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" class="post-img " style="background-size: cover; 
+                background-position: center center;">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://picx.zhimg.com/80/v2-b44931ea513e5f7b3b06f2703f79653c_1440w.webp" class="lazyload placeholder" data-srcset="https://picx.zhimg.com/80/v2-b44931ea513e5f7b3b06f2703f79653c_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+              </a>
+            </div>
+            <div class="post-date-title">
+              <div>
+                
+                  <span class="post-date">10-19</span>
+                
+              </div>
+              <a class="post-title" href="/2024/10/19/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E5%85%AB%E5%9F%BA%E4%BA%8E%E5%86%85%E5%AD%98%E7%9A%84%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">数据库实现八基于内存的存储引擎</a>
+            </div>
+          </div>
+        
+          <div class="aside-list-item">
+            
+            
+            
+
+            <div class="post-img-box">
+              <a href="/2024/10/02/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B8%83%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" class="post-img " style="background-size: cover; 
+                background-position: center center;">
+                <img class="lazyload lazyload placeholder" style="width:100%;height:100%;object-fit:cover;" data-src="https://pic4.zhimg.com/80/v2-83ea273b88e119d9615aed0d89aad4ab_1440w.webp" class="lazyload placeholder" data-srcset="https://pic4.zhimg.com/80/v2-83ea273b88e119d9615aed0d89aad4ab_1440w.webp" srcset="https://pic1.zhimg.com/v2-cd38920285d125be80b3eb504052c550_b.webp" alt="">
+              </a>
+            </div>
+            <div class="post-date-title">
+              <div>
+                
+                  <span class="post-date">10-02</span>
+                
+              </div>
+              <a class="post-title" href="/2024/10/02/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%9E%E7%8E%B0%E4%B8%83%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">数据库实现七存储引擎</a>
+            </div>
+          </div>
+        
+      </div>
     </div>
+  </section>
+
+    
+  </div>
+</aside>
+
+  <!-- 图片放大 Wrap images with fancybox support -->
+  <script src="/js/wrapImage.js"></script>
 </div>
+
+<!-- 文章详情页背景图 -->
+<div id="appBgSwiper" style="position: fixed;left: 0;top: 0;width: 100%;height: 100%;z-index: -2;"
+	:style="{'background-color': bgColor ? bgColor : 'transparent'}">
+	<transition-group tag="ul" :name="names">
+		<li v-for='(image,index) in img' :key='index' v-show="index === mark" class="bg-swiper-box">
+			<img :src="image" class="bg-swiper-img no-lazy">
+		</li>
+	</transition-group>
+</div>
+<script>
+	var vm = new Vue({
+		el: '#appBgSwiper',
+		data: {
+			names: '' || 'fade' || 'fade', // translate-fade fade
+			mark: 0,
+			img: [],
+			bgColor: '',
+			time: null
+		},
+		methods: {   //添加方法
+			change(i, m) {
+				if (i > m) {
+					// this.names = 'fade';
+				} else if (i < m) {
+					// this.names = 'fade';
+				} else {
+					return;
+				}
+				this.mark = i;
+			},
+			prev() {
+				// this.names = 'fade';
+				this.mark--;
+				if (this.mark === -1) {
+					this.mark = 3;
+					return
+				}
+			},
+			next() {
+				// this.names = 'fade';
+				this.mark++;
+				if (this.mark === this.img.length) {
+					this.mark = 0;
+					return
+				}
+			},
+			autoPlay() {
+				// this.names = 'fade';
+				this.mark++;
+				if (this.mark === this.img.length) {
+					this.mark = 0;
+					return
+				}
+			},
+			play() {
+				let bgImgDelay = '' || '180000'
+				let delay = parseInt(bgImgDelay) || 180000;
+				this.time = setInterval(this.autoPlay, delay);
+			},
+			enter() {
+				clearInterval(this.time);
+			},
+			leave() {
+				this.play();
+			}
+		},
+		created() {
+			this.play()
+		},
+		beforeDestroy() {
+			clearInterval(this.time);
+		},
+		mounted() {
+			let prop = '' || '';
+			let isImg = prop.includes('.bmp') || prop.includes('.jpg') || prop.includes('.png') || prop.includes('.tif') || prop.includes('.gif') || prop.includes('.pcx') || prop.includes('.tga') || prop.includes('.exif') || prop.includes('.fpx') || prop.includes('.psd') || prop.includes('.cdr') || prop.includes('.pcd') || prop.includes('.dxf') || prop.includes('.ufo') || prop.includes('.eps') || prop.includes('.ai') || prop.includes('.raw') || prop.includes('.WMF') || prop.includes('.webp') || prop.includes('.jpeg') || prop.includes('http://') || prop.includes('https://')
+			if (isImg) {
+				let img = prop.split(',');
+				let configRoot = '/'
+				let arrImg = [];
+				img.forEach(el => {
+					var Expression = /http(s)?:\/\/([\w-]+\.)+[\w-]+(\/[\w- .\/?%&=]*)?/;
+					var objExp = new RegExp(Expression);
+
+					if (objExp.test(el)) {
+						// http or https
+						arrImg.push(el);
+					} else {
+						// 非http or https开头
+						// 本地文件
+						let firstStr = el.charAt(0);
+						if (firstStr == '/') {
+							el = el.substr(1); // 删除第一个字符 '/',因为 configRoot最后一个字符为 /
+						}
+						el = configRoot + el;
+						arrImg.push(el);
+					}
+				})
+				this.img = arrImg;
+			} else {
+				this.bgColor = prop;
+			}
+		}
+	})
+</script>
+
+<style>
+	.bg-swiper-box {
+		position: absolute;
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	.bg-swiper-img {
+		object-fit: cover;
+		width: 100%;
+		height: 100%;
+	}
+</style>
+
+
+
+
+  <script>
+  function loadMermaid() {
+    if (document.getElementsByClassName('mermaid').length) {
+      if (window.mermaidJsLoad) mermaid.init()
+      else {
+        loadScript('https://unpkg.com/mermaid/dist/mermaid.min.js').then(() => {
+          window.mermaidJsLoad = true
+          mermaid.initialize({
+            theme: 'default',
+          })
+          if ('true') {
+            mermaid.init();
+          }
+        })
+      }
+    }
+  };
+  document.addEventListener("DOMContentLoaded", function () {
+    loadMermaid();
+  })
+
+  document.addEventListener('pjax:complete', function () {
+    loadMermaid();
+  })
+  
+</script>
+
 
       </main>
     </div>
